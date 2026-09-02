@@ -1,13 +1,1 @@
-﻿using System.Web.Mvc;
-
-namespace Bookstore.Web
-{
-    public class FilterConfig
-    {
-        public static void RegisterGlobalFilters(GlobalFilterCollection filters)
-        {
-            filters.Add(new HandleErrorAttribute());
-            filters.Add(new AuthorizeAttribute());
-        }
-    }
-}
+// FilterConfig is no longer used. Global filters are configured in Program.cs via AddControllersWithViews(options => ...).
