@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace BobsBookstoreClassic.Data
 {
@@ -10,25 +10,46 @@ namespace BobsBookstoreClassic.Data
 
         private static BookstoreConfiguration Instance => Lazy.Value;
 
-        private readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private BookstoreConfiguration()
         {
-            foreach (string key in ConfigurationManager.AppSettings)
-            {
-                _appSettings[key] = ConfigurationManager.AppSettings[key];
+        }
 
-                if (Environment.GetEnvironmentVariable(key) != null)
+        /// <summary>
+        /// Initializes BookstoreConfiguration from an IConfiguration instance.
+        /// Flattens all configuration keys, converting the ":" separator used by IConfiguration
+        /// to the "/" separator used throughout this application.
+        /// </summary>
+        public static void Initialize(IConfiguration configuration)
+        {
+            // Load all flat settings (converted from ":" to "/")
+            foreach (var kvp in configuration.AsEnumerable())
+            {
+                if (kvp.Value != null)
                 {
-                    _appSettings[key] = Environment.GetEnvironmentVariable(key);
+                    var normalizedKey = kvp.Key.Replace(":", "/");
+                    Instance._appSettings[normalizedKey] = kvp.Value;
                 }
             }
 
-            foreach (ConnectionStringSettings connectionStringSettings in ConfigurationManager.ConnectionStrings)
+            // Load connection strings
+            var connStrSection = configuration.GetSection("ConnectionStrings");
+            foreach (var cs in connStrSection.GetChildren())
             {
-                _connectionStrings[connectionStringSettings.Name] = connectionStringSettings.ConnectionString;
+                Instance._connectionStrings[cs.Key] = cs.Value ?? string.Empty;
+            }
 
+            // Environment variable overrides (using normalized "/" keys)
+            foreach (var key in new List<string>(Instance._appSettings.Keys))
+            {
+                var envKey = key.Replace("/", "__");
+                var envValue = Environment.GetEnvironmentVariable(envKey);
+                if (envValue != null)
+                {
+                    Instance._appSettings[key] = envValue;
+                }
             }
         }
 
@@ -39,13 +60,15 @@ namespace BobsBookstoreClassic.Data
 
         public static string GetSetting(string key)
         {
-            return Instance._appSettings[key];
+            if (Instance._appSettings.TryGetValue(key, out var value))
+                return value;
+            return null;
         }
 
         public static T GetSetting<T>(string key)
         {
-            var value = Instance._appSettings[key];
-
+            var value = GetSetting(key);
+            if (value == null) return default;
             return (T)Convert.ChangeType(value, typeof(T));
         }
 
@@ -56,8 +79,9 @@ namespace BobsBookstoreClassic.Data
 
         public static string GetConnectionString(string key)
         {
-            return Instance._connectionStrings[key];
+            if (Instance._connectionStrings.TryGetValue(key, out var value))
+                return value;
+            return null;
         }
-
     }
 }

@@ -1,15 +1,26 @@
-﻿using Bookstore.Domain.Books;
+using Bookstore.Domain.Books;
 using Bookstore.Domain.ReferenceData;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Data.Entity;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bookstore.Data
 {
-    public class BookstoreDbInitializer : DropCreateDatabaseIfModelChanges<ApplicationDbContext>
+    /// <summary>
+    /// Seeds the database with initial reference data and books if the tables are empty.
+    /// Replaces the EF6 DropCreateDatabaseIfModelChanges initializer with a safe, additive seeder.
+    /// </summary>
+    public static class BookstoreDbSeeder
     {
-        protected override void Seed(ApplicationDbContext context)
+        public static async Task SeedAsync(ApplicationDbContext context)
         {
-            var referenceDataItems = new List<ReferenceDataItem> {
+            await context.Database.EnsureCreatedAsync();
+
+            if (await context.ReferenceData.AnyAsync()) return;
+
+            var referenceDataItems = new List<ReferenceDataItem>
+            {
                 new ReferenceDataItem(ReferenceDataType.BookType, "Hardcover") { Id = 1 },
                 new ReferenceDataItem(ReferenceDataType.BookType, "Trade Paperback") { Id = 2 },
                 new ReferenceDataItem(ReferenceDataType.BookType, "Mass Market Paperback") { Id = 3 },
@@ -21,27 +32,29 @@ namespace Bookstore.Data
 
                 new ReferenceDataItem(ReferenceDataType.Genre, "Biographies") { Id = 8 },
                 new ReferenceDataItem(ReferenceDataType.Genre, "Children's Books") { Id = 9 },
-                new ReferenceDataItem( ReferenceDataType.Genre, "History") { Id = 10 },
-                new ReferenceDataItem( ReferenceDataType.Genre, "Literature & Fiction") { Id = 11 },
-                new ReferenceDataItem( ReferenceDataType.Genre, "Mystery, Thriller & Suspense") { Id = 12 },
-                new ReferenceDataItem( ReferenceDataType.Genre, "Science Fiction & Fantasy") { Id = 13 },
-                new ReferenceDataItem( ReferenceDataType.Genre, "Travel") { Id = 14 },
+                new ReferenceDataItem(ReferenceDataType.Genre, "History") { Id = 10 },
+                new ReferenceDataItem(ReferenceDataType.Genre, "Literature & Fiction") { Id = 11 },
+                new ReferenceDataItem(ReferenceDataType.Genre, "Mystery, Thriller & Suspense") { Id = 12 },
+                new ReferenceDataItem(ReferenceDataType.Genre, "Science Fiction & Fantasy") { Id = 13 },
+                new ReferenceDataItem(ReferenceDataType.Genre, "Travel") { Id = 14 },
 
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Arcadia Books") { Id = 15 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Astral Publishing") { Id = 16 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Moonlight Publishing") { Id = 17 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Dreamscape Press") { Id = 18 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Enchanted Library") { Id = 19 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Fantasia House") { Id = 20 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Horizon Books") { Id = 21 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Infinity Press") { Id = 22 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Paradigm Publishing") { Id = 23 },
-                new ReferenceDataItem( ReferenceDataType.Publisher, "Aurora Publishing") { Id = 24 }
-           };
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Arcadia Books") { Id = 15 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Astral Publishing") { Id = 16 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Moonlight Publishing") { Id = 17 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Dreamscape Press") { Id = 18 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Enchanted Library") { Id = 19 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Fantasia House") { Id = 20 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Horizon Books") { Id = 21 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Infinity Press") { Id = 22 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Paradigm Publishing") { Id = 23 },
+                new ReferenceDataItem(ReferenceDataType.Publisher, "Aurora Publishing") { Id = 24 }
+            };
 
-            context.ReferenceData.AddRange(referenceDataItems);
+            await context.ReferenceData.AddRangeAsync(referenceDataItems);
+            await context.SaveChangesAsync();
 
-            var books = new List<Book> {            
+            var books = new List<Book>
+            {
                 new Book("2020: The Apocalypse", "Li Juan", "6556784356", 15, 1, 13, 5, 10.95M, 25, null, null, "/Content/Images/coverimages/apocalypse.png") { Id = 1 },
                 new Book("Children Of Iron", "Nikki Wolf", "7665438976", 16, 1, 11, 6, 13.95M, 3, null, null, "/Content/Images/coverimages/childrenofiron.png") { Id = 2 },
                 new Book("Gold In The Dark", "Richard Roe", "5442280765", 17, 1, 13, 5, 6.50M, 10, null, null, "/Content/Images/coverimages/goldinthedark.png") { Id = 3 },
@@ -52,9 +65,8 @@ namespace Bookstore.Data
                 new Book("My Search For Meaning", "Mateo Jackson", "4558786554", 22, 3, 8, 7, 5M, 15, null, null, "/Content/Images/coverimages/mysearchformeaning.png") { Id = 8 }
             };
 
-            context.Book.AddRange(books);
-
-            context.SaveChanges();
+            await context.Book.AddRangeAsync(books);
+            await context.SaveChangesAsync();
         }
     }
 }
