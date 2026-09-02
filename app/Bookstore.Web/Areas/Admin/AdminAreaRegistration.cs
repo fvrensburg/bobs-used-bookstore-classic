@@ -1,24 +1,6 @@
-﻿using System.Web.Mvc;
-
+// Admin area registration is handled by the [Area("Admin")] attribute on AdminAreaControllerBase
+// and the area route configured in Program.cs.
+// This file is kept for compatibility but is no longer used.
 namespace Bookstore.Web.Areas
 {
-    public class AdminAreaRegistration : AreaRegistration 
-    {
-        public override string AreaName 
-        {
-            get 
-            {
-                return "Admin";
-            }
-        }
-
-        public override void RegisterArea(AreaRegistrationContext context) 
-        {
-            context.MapRoute(
-                "Admin_default",
-                "Admin/{controller}/{action}/{id}",
-                new { action = "Index", id = UrlParameter.Optional }, namespaces: new[] { "Bookstore.Web.Areas.Admin.Controllers" }
-            );
-        }
-    }
 }

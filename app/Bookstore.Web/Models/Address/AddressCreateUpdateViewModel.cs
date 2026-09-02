@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookstore.Web.ViewModel.Address
 {
@@ -57,6 +55,7 @@ namespace Bookstore.Web.ViewModel.Address
             new SelectListItem { Value = "GA", Text = "Georgia" },
             new SelectListItem { Value = "HI", Text = "Hawaii" },
             new SelectListItem { Value = "ID", Text = "Idaho" },
+            new SelectListItem { Value = "ID", Text = "Idaho" },
             new SelectListItem { Value = "IL", Text = "Illinois" },
             new SelectListItem { Value = "IN", Text = "Indiana" },
             new SelectListItem { Value = "IA", Text = "Iowa" },
@@ -97,5 +96,4 @@ namespace Bookstore.Web.ViewModel.Address
             new SelectListItem { Value = "WY", Text = "Wyoming" }
         };
     }
-
 }

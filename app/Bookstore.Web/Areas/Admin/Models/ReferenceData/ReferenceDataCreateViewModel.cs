@@ -1,6 +1,5 @@
-﻿using Bookstore.Domain.ReferenceData;
-using System.Collections.Generic;
-using System.Web.Mvc;
+using Bookstore.Domain.ReferenceData;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookstore.Web.Areas.Admin.Models.ReferenceData
 {
