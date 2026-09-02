@@ -1,63 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace BobsBookstoreClassic.Data
 {
     public sealed class BookstoreConfiguration
     {
-        private static readonly Lazy<BookstoreConfiguration> Lazy = new Lazy<BookstoreConfiguration>(() => new BookstoreConfiguration());
+        private static readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>();
 
-        private static BookstoreConfiguration Instance => Lazy.Value;
-
-        private readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>();
-
-        private BookstoreConfiguration()
+        /// <summary>
+        /// Initializes configuration from ASP.NET Core IConfiguration.
+        /// Must be called at application startup before any GetSetting calls.
+        /// </summary>
+        public static void Initialize(IConfiguration configuration)
         {
-            foreach (string key in ConfigurationManager.AppSettings)
+            // Load all configuration values, converting ":" delimiters to "/" for backward compatibility
+            foreach (var kvp in configuration.AsEnumerable())
             {
-                _appSettings[key] = ConfigurationManager.AppSettings[key];
-
-                if (Environment.GetEnvironmentVariable(key) != null)
+                if (kvp.Value != null)
                 {
-                    _appSettings[key] = Environment.GetEnvironmentVariable(key);
+                    var key = kvp.Key.Replace(":", "/");
+                    _appSettings[key] = kvp.Value;
+
+                    // Also check environment variables with the same key
+                    var envValue = Environment.GetEnvironmentVariable(kvp.Key);
+                    if (envValue != null)
+                    {
+                        _appSettings[key] = envValue;
+                    }
                 }
             }
 
-            foreach (ConnectionStringSettings connectionStringSettings in ConfigurationManager.ConnectionStrings)
+            // Load connection strings
+            var connectionStrings = configuration.GetSection("ConnectionStrings");
+            foreach (var cs in connectionStrings.GetChildren())
             {
-                _connectionStrings[connectionStringSettings.Name] = connectionStringSettings.ConnectionString;
-
+                _connectionStrings[cs.Key] = cs.Value ?? string.Empty;
             }
         }
 
         public static void AddSetting(string key, string value)
         {
-            Instance._appSettings[key] = value;
+            _appSettings[key] = value;
         }
 
         public static string GetSetting(string key)
         {
-            return Instance._appSettings[key];
+            if (_appSettings.TryGetValue(key, out var value))
+                return value;
+
+            return string.Empty;
         }
 
         public static T GetSetting<T>(string key)
         {
-            var value = Instance._appSettings[key];
-
+            var value = GetSetting(key);
             return (T)Convert.ChangeType(value, typeof(T));
         }
 
         public static void AddConnectionString(string key, string value)
         {
-            Instance._connectionStrings[key] = value;
+            _connectionStrings[key] = value;
         }
 
         public static string GetConnectionString(string key)
         {
-            return Instance._connectionStrings[key];
-        }
+            if (_connectionStrings.TryGetValue(key, out var value))
+                return value;
 
+            return string.Empty;
+        }
     }
 }

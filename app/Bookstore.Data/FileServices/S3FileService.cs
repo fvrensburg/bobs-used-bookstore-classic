@@ -1,9 +1,7 @@
-﻿using Amazon.S3;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Bookstore.Domain;
-using System.IO;
-using System.Threading.Tasks;
 using BobsBookstoreClassic.Data;
 
 namespace Bookstore.Data.FileServices

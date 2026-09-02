@@ -1,12 +1,7 @@
-﻿using Amazon.Auth.AccessControlPolicy;
 using Bookstore.Domain;
 using Bookstore.Domain.Offers;
 using Bookstore.Domain.Orders;
-using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Data.Repositories
 {
@@ -35,7 +30,7 @@ namespace Bookstore.Data.Repositories
 
         async Task IOfferRepository.AddAsync(Offer offer)
         {
-            await Task.Run(() => dbContext.Offer.Add(offer));
+            await dbContext.Offer.AddAsync(offer);
         }
 
         Task<Offer> IOfferRepository.GetAsync(int id)
@@ -72,11 +67,10 @@ namespace Bookstore.Data.Repositories
                 query = query.Where(x => x.OfferStatus == filters.OfferStatus);
             }
 
-            query = query.Include(x => x.Customer)
+            query = query
+                .Include(x => x.Customer)
                 .Include(x => x.Condition)
                 .Include(x => x.Genre);
-         
-                
 
             var result = new PaginatedList<Offer>(query, pageIndex, pageSize);
 
