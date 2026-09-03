@@ -1,4 +1,4 @@
-﻿using Bookstore.Domain;
+using Bookstore.Domain;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -15,14 +15,14 @@ namespace Bookstore.Data.FileServices
 
         // The interface defines an async operation, however System.IO.File
         // does not expose an async delete method.
-        public Task DeleteAsync(string filePath)
+        public Task DeleteAsync(string? filePath)
         {
-            if (File.Exists(filePath)) File.Delete(filePath);
+            if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)) File.Delete(filePath);
 
             return Task.CompletedTask;
         }
 
-        public async Task<string> SaveAsync(Stream file, string filename)
+        public async Task<string?> SaveAsync(Stream? file, string? filename)
         {
             if (file == null) return null;
 

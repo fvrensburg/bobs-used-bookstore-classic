@@ -5,9 +5,9 @@ namespace Bookstore.Domain.Customers
 {
     public interface ICustomerService
     {
-        Task<Customer> GetAsync(int id);
+        Task<Customer?> GetAsync(int id);
 
-        Task<Customer> GetAsync(string sub);
+        Task<Customer?> GetAsync(string sub);
 
         Task CreateOrUpdateCustomerAsync(CreateOrUpdateCustomerDto createOrUpdateCustomerDto);
     }
@@ -21,12 +21,12 @@ namespace Bookstore.Domain.Customers
             this.customerRepository = customerRepository;
         }
 
-        public async Task<Customer> GetAsync(int id)
+        public async Task<Customer?> GetAsync(int id)
         {
             return await customerRepository.GetAsync(id);
         }
 
-        public async Task<Customer> GetAsync(string sub)
+        public async Task<Customer?> GetAsync(string sub)
         {
             return await customerRepository.GetAsync(sub);
         }

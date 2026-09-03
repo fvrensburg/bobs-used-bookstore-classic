@@ -8,15 +8,17 @@ namespace Bookstore.Web.ViewModel.Checkout
     {
         public IEnumerable<CheckoutFinishedItemViewModel> Items { get; set; } = new List<CheckoutFinishedItemViewModel>();
 
-        public CheckoutFinishedViewModel(Order order)
+        public CheckoutFinishedViewModel(Order? order)
         {
+            if (order == null) return;
+
             Items = order.OrderItems.Select(x => new CheckoutFinishedItemViewModel
             {
-                BookId = x.Book.Id,
-                Bookname = x.Book.Name,
-                Price = x.Book.Price,
+                BookId = x.Book?.Id ?? 0,
+                Bookname = x.Book?.Name,
+                Price = x.Book?.Price ?? 0m,
                 Quantity = x.Quantity,
-                Url = x.Book.CoverImageUrl
+                Url = x.Book?.CoverImageUrl
             });
         }
     }

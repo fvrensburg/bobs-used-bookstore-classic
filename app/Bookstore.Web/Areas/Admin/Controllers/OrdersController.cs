@@ -25,6 +25,8 @@ namespace Bookstore.Web.Areas.Admin.Controllers
         {
             var order = await orderService.GetOrderAsync(id);
 
+            if (order == null) return NotFound();
+
             return View(new OrderDetailsViewModel(order));
         }
 

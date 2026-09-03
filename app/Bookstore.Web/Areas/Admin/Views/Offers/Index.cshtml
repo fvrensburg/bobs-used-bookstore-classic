@@ -52,7 +52,7 @@
 <div class="card m-3">
     <div class="card-header">
         <div class="d-flex justify-content-end">
-            @await Html.PartialAsync("_Paginator", Model)
+            <partial name="_Paginator" model="Model" />
         </div>
     </div>
 
@@ -122,7 +122,7 @@
 
     <div class="card-footer">
         <div class="d-flex justify-content-end">
-            @await Html.PartialAsync("_Paginator", Model)
+            <partial name="_Paginator" model="Model" />
         </div>
     </div>
 </div>

@@ -58,14 +58,14 @@ namespace BobsBookstoreClassic.Data
             Instance._appSettings[key] = value;
         }
 
-        public static string GetSetting(string key)
+        public static string? GetSetting(string key)
         {
             if (Instance._appSettings.TryGetValue(key, out var value))
                 return value;
             return null;
         }
 
-        public static T GetSetting<T>(string key)
+        public static T? GetSetting<T>(string key)
         {
             var value = GetSetting(key);
             if (value == null) return default;
@@ -77,7 +77,7 @@ namespace BobsBookstoreClassic.Data
             Instance._connectionStrings[key] = value;
         }
 
-        public static string GetConnectionString(string key)
+        public static string? GetConnectionString(string key)
         {
             if (Instance._connectionStrings.TryGetValue(key, out var value))
                 return value;

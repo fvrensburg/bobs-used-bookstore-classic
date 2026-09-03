@@ -9,7 +9,7 @@
         string State,
         string Country,
         string ZipCode,
-        string CustomerSub)
+        string? CustomerSub)
         {
             this.AddressLine1 = AddressLine1;
             this.AddressLine2 = AddressLine2;
@@ -26,7 +26,7 @@
         public string State { get; }
         public string Country { get; }
         public string ZipCode { get; }
-        public string CustomerSub { get; }
+        public string? CustomerSub { get; }
     }
 
     public class UpdateAddressDto
@@ -39,7 +39,7 @@
         string State,
         string Country,
         string ZipCode,
-        string CustomerSub)
+        string? CustomerSub)
         {
             this.AddressId = AddressId;
             this.AddressLine1 = AddressLine1;
@@ -58,20 +58,20 @@
         public string State { get; }
         public string Country { get; }
         public string ZipCode { get; }
-        public string CustomerSub { get; }
+        public string? CustomerSub { get; }
     }
 
     public class DeleteAddressDto
     {
         public DeleteAddressDto(
         int AddressId,
-        string CustomerSub)
+        string? CustomerSub)
         {
             this.AddressId = AddressId;
             this.CustomerSub = CustomerSub;
         }
 
         public int AddressId { get; }
-        public string CustomerSub { get; }
+        public string? CustomerSub { get; }
     }
 }

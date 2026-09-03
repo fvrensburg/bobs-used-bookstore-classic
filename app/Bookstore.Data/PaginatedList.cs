@@ -8,7 +8,7 @@ namespace Bookstore.Domain
 {
     public class PaginatedList<T> : List<T>, IPaginatedList<T> where T : Entity
     {
-        private readonly IQueryable<T> source;
+        private readonly IQueryable<T> source = null!;
         private readonly int pageIndex;
         private readonly int pageSize;
 

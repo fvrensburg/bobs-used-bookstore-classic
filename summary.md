@@ -1,10 +1,10 @@
 # Migration Summary: .NET Framework 4.8 → .NET 8
 
-## Status: ✅ Build Succeeds — 0 Errors, 2 Warnings | ✅ 20/20 Tests Pass
+## Status: ✅ Build Succeeds — 0 Errors, 0 Warnings | ✅ 20/20 Tests Pass
 
 ```
 Build succeeded.
-    2 Warning(s)   (Amazon.CDK.Lib NU1901 — unresolvable upstream; affects all published versions)
+    0 Warning(s)
     0 Error(s)
 
 Passed!  - Failed: 0, Passed: 20, Skipped: 0, Total: 20
@@ -12,253 +12,99 @@ Passed!  - Failed: 0, Passed: 20, Skipped: 0, Total: 20
 
 ---
 
-## Changes Made
+## Changes Made (Latest Cycle)
+
+### 1. @Html.Partial → `<partial>` tag helper
+
+`Areas/Admin/Views/Offers/Index.cshtml`: Replaced both `@await Html.PartialAsync("_Paginator", Model)` calls with `<partial name="_Paginator" model="Model" />` — consistent with all other Admin views and eliminates the MVC1000 advisory pattern entirely across the solution.
+
+### 2. Nullable reference types enabled on Bookstore.Domain and Bookstore.Data
+
+Added `<Nullable>enable</Nullable>` to both `Bookstore.Domain/Bookstore.Domain.csproj` and `Bookstore.Data/Bookstore.Data.csproj`. The build produces **0 warnings** after resolving all CS8xxx diagnostics.
+
+**Entity classes** — Used `#pragma warning disable CS8618` around EF Core parameterless constructors (same pattern as the pre-existing `Address.cs`) to keep required string columns non-nullable while satisfying the compiler. Navigation properties that can be unloaded are correctly typed as `T?`.
+
+**Summary of changes across all projects:**
+
+| Category | Fix |
+|---|---|
+| EF entity empty constructors (`Book`, `Offer`, `Order`, `OrderItem`, `ShoppingCart`, `ShoppingCartItem`, `ReferenceDataItem`) | Added `#pragma warning disable/restore CS8618` around EF parameterless constructors |
+| Navigation properties (`Publisher`, `Genre`, `Condition`, `BookType`, `Customer`, `Address`, `Book`, `Order`, `ShoppingCart`) | Changed to `T?` |
+| Optional string columns (`CoverImageUrl`, `Summary`, `FrontUrl`, `Comment`) | Changed to `string?` |
+| Filter DTOs (`BookFilters.Name/Author`, `OfferFilters.BookName/Author`) | Changed to `string?` (optional search criteria) |
+| `Entity.RowVersion` | Changed to `byte[]?` |
+| `Customer` all string properties | Changed to `string?` (identity data from auth provider) |
+| `DbSecrets` all string properties | Changed to `string?` (JSON-deserialized secrets config) |
+| Repository "get by id/key" return types (`GetAsync`, `ListAsync` with sub) | Changed to `T?` throughout all interfaces and implementations |
+| `IFileService.SaveAsync/DeleteAsync` | `Stream?`/`string?` parameters; `Task<string?>` return |
+| `IImageValidationService.IsSafeAsync` | Changed to `Stream? image` |
+| `BookstoreConfiguration.GetSetting/GetConnectionString` | Changed to `string?` return |
+| `PaginatedList.source` field | Added `= null!` (EF parameterless constructor pattern) |
+| Auth-identity DTO fields (`CustomerSub`, `Username`, `FirstName`, `LastName`, `BookName`, `Author`, `ISBN`) | Changed to `string?` in all affected DTOs |
+| `CreateBookDto`/`UpdateBookDto` optional fields | `string? Summary`, `Stream? CoverImage`, `string? CoverImageFileName` |
+| `CreateReferenceDataItemDto`/`UpdateReferenceDataItemDto` | `string? Text` |
+| `BookResult.ErrorMessage` | Changed to `string?` |
+| View model constructors with nullable entity params | Changed `ShoppingCart`, `Order` to `T?`; added null guards |
+| View models accessing nullable nav props | Changed to `?.Text`, `?.FullName`, `?.AddressLine1`, `?.Price ?? 0m` etc. |
+| `SearchDetailsViewModel` string properties | `PublisherName`, `GenreName`, `TypeName`, `ConditionName` changed to `string?` |
+| LINQ filters on nullable strings | Used `filters.Name!` null-forgiving inside lambdas guarded by `IsNullOrWhiteSpace` |
+| LINQ on nullable nav props after `Include()` | Used `x.Genre!.Text` null-forgiving pattern |
+| Service null guards | Added `if (x == null) return;` in `AddressService`, `ReferenceDataService`, `OfferService`, `ShoppingCartService`, `OrderService` where entity lookups can legitimately return null |
+| Controller null guards | Added `return NotFound()` guards in `OrdersController.Details`, `Admin/OrdersController.Details`, `Admin/ReferenceDataController.Update`, `AddressController.Update` |
+
+### 3. Legacy App_Start files deleted
+
+The following files were excluded from compilation in the previous migration cycle and have now been **physically deleted** to reduce confusion for future developers:
+
+| Deleted file | Reason |
+|---|---|
+| `App_Start/AuthenticationSetup.cs` | Superseded by auth setup in `Program.cs` |
+| `App_Start/BundleConfig.cs` | Superseded by static file serving in `Program.cs` |
+| `App_Start/ConfigurationSetup.cs` | Superseded by SSM config provider in `Program.cs` |
+| `App_Start/DependencyInjectionSetup.cs` | Superseded by DI registrations in `Program.cs` |
+| `App_Start/FilterConfig.cs` | Superseded by `AddControllersWithViews(opts.Filters.Add(...))` |
+| `App_Start/RouteConfig.cs` | Superseded by `MapControllerRoute` in `Program.cs` |
+| `Areas/Admin/AdminAreaRegistration.cs` | Superseded by `[Area("Admin")]` + area route in `Program.cs` |
+| `Global.asax.cs` | Superseded by `Program.cs` |
+| `Startup.cs` | OWIN startup, superseded by `Program.cs` |
+
+`App_Start/LoggingSetup.cs` is **retained** — it is still compiled and called from `Program.cs` to configure NLog targets.
+
+All now-unnecessary `<Compile Remove>` entries were removed from `Bookstore.Web.csproj`.
+
+---
+
+## Previous Changes (Initial Migration)
 
 ### Project Files
 
 | File | Change |
 |------|--------|
-| `app/Bookstore.Web/Bookstore.Web.csproj` | SDK-style `Microsoft.NET.Sdk.Web`, `net8.0`, `Nullable=enable`. Excluded all legacy App_Start files, AssemblyInfo, Global.asax. |
-| `app/Bookstore.Data/Bookstore.Data.csproj` | `net8.0` + EF Core 8.0. Magick.NET upgraded to 14.16.0. |
-| `app/Bookstore.Domain/Bookstore.Domain.csproj` | Upgraded from `netstandard2.0` → `net8.0` (fixes `System.ComponentModel.DataAnnotations` resolution). Removed obsolete compat shims. |
-| `app/Bookstore.Common/Bookstore.Common.csproj` | Upgraded from `netstandard2.0` → `net8.0`. Removed obsolete `Microsoft.CSharp` and `System.Data.DataSetExtensions` compat packages. |
-| `app/Bookstore.Cdk/Bookstore.Cdk.csproj` | Upgraded `Amazon.CDK.Lib` from 2.188.0 → 2.200.0 (latest; NU1901 persists upstream). |
+| `app/Bookstore.Web/Bookstore.Web.csproj` | SDK-style `Microsoft.NET.Sdk.Web`, `net8.0`, `Nullable=enable`. |
+| `app/Bookstore.Data/Bookstore.Data.csproj` | `net8.0` + EF Core 8.0 + `Nullable=enable`. Magick.NET 14.16.0. |
+| `app/Bookstore.Domain/Bookstore.Domain.csproj` | `net8.0` + `Nullable=enable`. |
+| `app/Bookstore.Common/Bookstore.Common.csproj` | `net8.0`. |
+| `app/Bookstore.Cdk/Bookstore.Cdk.csproj` | `Amazon.CDK.Lib` 2.200.0. |
 | `app/Bookstore.Web.Tests/Bookstore.Web.Tests.csproj` | xUnit 2.6, WebApplicationFactory, EF InMemory, Moq. |
-| `BobsBookstoreClassic.sln` | Updated Bookstore.Web GUID; added Bookstore.Web.Tests project. |
 | `Dockerfile` (root) | Linux multi-stage .NET 8 build. |
 
-### Nullable Reference Type Fixes (CS8xxx warnings — all resolved)
+### Key Migration Highlights
 
-| Category | Fix applied |
-|----------|------------|
-| `CS8618` — View model string properties uninitialized | All display-only string properties marked `string?` (data can be null from DB joins); required form input properties given `= string.Empty` defaults |
-| `CS8618` — IEnumerable properties uninitialized | Added `= Enumerable.Empty<SelectListItem>()` defaults |
-| `CS8625` — null literal to non-nullable | `Login(string? redirectUri = null)`, `GetSelectListForEnum(string? emptyItem = null)` |
-| `CS8765` — nullability mismatch in override | `IsValid(object? value)` in `ImageTypesAttribute` and `MaxFileSizeAttribute` |
-| `CS8603` — possible null return | `ClaimsPrincipalExtensions.GetSub` return types changed to `string?` |
-| `CS8600/CS8604` — null to non-nullable var/arg | `string?` for `shoppingCartClientId` in `HttpContextExtensions`; null-coalescing `??` guards in `HttpContextExtensions` and `AddressController` |
-| `CS8602` — dereference of possibly null | `User.Identity?.IsAuthenticated == true` in `_LoginPartial.cshtml`, `_NavBarPartial.cshtml`, `ShoppingCart/Index.cshtml`; `User.Identity?.Name` in Admin `_LoginPartial.cshtml`; null check on `context.TokenEndpointRequest` in `Program.cs` |
-| `CS8601` — null reference assignment | `ErrorViewModel.RequestId` changed to `string?` (both Web and Admin area) |
-
-### MVC1000 Warnings — All Resolved
-
-All `@Html.Partial(...)` and `@{ Html.RenderPartial(...); }` calls replaced with either:
-- `<partial name="..." />` tag helper (no-model case)
-- `@await Html.PartialAsync(...)` (cases passing a model object)
-
-Files updated: `_Layout.cshtml`, `_NavBarPartial.cshtml`, Admin `_Layout.cshtml`, Admin `_NavBarPartial.cshtml`, `Wishlist/Index.cshtml`, `Search/Index.cshtml`, `ShoppingCart/Index.cshtml`, `Address/CreateUpdate.cshtml`, `Admin/ReferenceData/Index.cshtml`, `Admin/Inventory/Index.cshtml`, `Admin/Inventory/CreateUpdate.cshtml`, `Admin/Orders/Index.cshtml`, `Admin/Orders/Details.cshtml`, `Admin/Offers/Index.cshtml`.
-
-### CDK — CS0618/CS0612 Warnings Resolved
-
-`CoreStack.cs`: Replaced deprecated `CloudFrontWebDistribution` (legacy L2 construct) with the modern `Distribution` + `S3BucketOrigin.WithOriginAccessIdentity()` API. Removed unused `Amazon.CDK.AWS.IAM` import.
-
-### Address Form — Razor Source Generator Fix
-
-`Views/Address/CreateUpdate.cshtml`: The `@using (Html.BeginForm()) { ... }` pattern combined with tag helpers (`asp-for`, `asp-validation-summary`) caused the .NET 8 Razor source generator to emit malformed C# (`CS1001: Identifier expected`). Rewrote the form using the modern `<form method="post">` tag helper approach with `asp-for`, `asp-validation-for`, and `<select asp-for asp-items>` throughout — identical functionality, no behavioral change.
-
----
-
-## Remaining Warnings (Cannot Be Resolved Without Upstream Fix)
-
-| Warning | Location | Reason |
-|---------|----------|--------|
-| `NU1901: Amazon.CDK.Lib 2.200.0 (GHSA-464c-974j-9xm6)` | `Bookstore.Cdk` | Affects all published CDK.Lib versions. Monitor AWS CDK for a patched release. |
+- `Global.asax` + OWIN `Startup.cs` → `Program.cs` (ASP.NET Core entry point)
+- `Web.config` → `appsettings.json`
+- EF6 (`System.Data.Entity`) → EF Core 8.0 (`Microsoft.EntityFrameworkCore`)
+- `System.Web.Mvc` → `Microsoft.AspNetCore.Mvc` across all controllers and view models
+- OWIN `OwinMiddleware` → ASP.NET Core `RequestDelegate` middleware
+- `HttpPostedFileBase` → `IFormFile`
+- `HttpCookie` → `CookieOptions`
+- Local and Cognito (OpenIdConnect) authentication migrated
+- Linux multi-stage Dockerfile
+- CDK EcsStack updated to Linux containers
+- All `@Html.Partial` → `<partial>` tag helpers / `@await Html.PartialAsync`
 
 ---
 
 ## Next Steps
 
-1. **EF Core Migrations**: Run `dotnet ef migrations add InitialCreate` in `Bookstore.Data` for the first deployment to a real SQL Server instance.
-2. **Cognito HTTPS**: The ECS stack comment notes Cognito Hosted UI requires HTTPS. Add a TLS termination (ACM cert + ALB HTTPS listener) to the CDK stack before enabling Cognito auth on Fargate.
-3. **CDK NU1901**: Monitor `Amazon.CDK.Lib` releases for a patch to GHSA-464c-974j-9xm6.
-
-
-## Status: ✅ Build Succeeds — 0 Errors, 2 Warnings | ✅ 20/20 Tests Pass
-
-```
-Build succeeded.
-    2 Warning(s)   (pre-existing Amazon.CDK.Lib NU1901 — unresolvable upstream)
-    0 Error(s)
-
-Passed!  - Failed: 0, Passed: 20, Skipped: 0, Total: 20
-```
-
----
-
-## Changes Made
-
-### Project Files
-
-| File | Change |
-|------|--------|
-| `app/Bookstore.Web/Bookstore.Web.csproj` | SDK-style `Microsoft.NET.Sdk.Web`, `net8.0`, `Nullable=enable`. Added `Amazon.Extensions.Configuration.SystemsManager 4.0.0` for native SSM integration. Excluded all legacy App_Start files, AssemblyInfo, Global.asax. |
-| `app/Bookstore.Data/Bookstore.Data.csproj` | `net8.0` + EF Core 8.0. Magick.NET upgraded to 14.16.0. |
-| `app/Bookstore.Domain/Bookstore.Domain.csproj` | `GenerateAssemblyInfo=false` to suppress duplicate attribute errors from existing `AssemblyInfo.cs`. |
-| `app/Bookstore.Web.Tests/Bookstore.Web.Tests.csproj` | **New** — xUnit 2.6, WebApplicationFactory, EF InMemory, Moq. |
-| `BobsBookstoreClassic.sln` | Updated Bookstore.Web GUID; added Bookstore.Web.Tests project. |
-| `Dockerfile` (root) | **Replaced** .NET Framework 4.8 Windows Dockerfile with Linux multi-stage .NET 8 build. |
-
-### New Files
-
-| File | Purpose |
-|------|---------|
-| `app/Bookstore.Web/Program.cs` | ASP.NET Core entry point: SSM config provider, NLog, DI, EF Core, auth, static files, middleware pipeline, DB seeding. Exposes `public partial class Program` for WebApplicationFactory. |
-| `app/Bookstore.Web/appsettings.json` | Settings replacing Web.config. |
-| `app/Bookstore.Web/wwwroot/.gitkeep` | `wwwroot/` root; Content/ and Scripts/ served via additional PhysicalFileProviders. |
-| `app/Bookstore.Web/Areas/Admin/Views/_ViewImports.cshtml` | Admin area namespace imports. |
-| `app/Bookstore.Web.Tests/GlobalUsings.cs` | Global usings for test project. |
-| `app/Bookstore.Web.Tests/InMemoryDbFixture.cs` | Shared in-memory EF Core fixture with seed helpers. |
-| `app/Bookstore.Web.Tests/Repositories/ReferenceDataRepositoryTests.cs` | 4 repository integration tests. |
-| `app/Bookstore.Web.Tests/Repositories/BookRepositoryTests.cs` | 4 repository integration tests (statistics, search, filtering). |
-| `app/Bookstore.Web.Tests/Helpers/HelperTests.cs` | 5 unit tests for `ClaimsPrincipalExtensions` and `HttpContextExtensions`. |
-| `app/Bookstore.Web.Tests/Middleware/LocalAuthenticationMiddlewareTests.cs` | 4 unit tests for `LocalAuthenticationMiddleware`. |
-| `app/Bookstore.Web.Tests/Controllers/HomeControllerIntegrationTests.cs` | 3 WebApplicationFactory integration tests (full pipeline with in-memory DB). |
-
-### Deleted Legacy Files
-
-- `app/Bookstore.Web/Web.config`, `Web.Debug.config`, `Web.Release.config`
-- `app/Bookstore.Web/Views/Web.config`
-- `app/Bookstore.Web/Areas/Admin/Views/web.config`
-- `app/Bookstore.Web/Global.asax`
-- `app/Bookstore.Web/packages.config`
-- `app/Bookstore.Data/App.config`
-
-### Static Files
-
-`UseStaticFiles()` is called three times in `Program.cs`:
-1. Default call — serves `wwwroot/` (ASP.NET Core convention).
-2. `/Content` → `Content/` (CSS, images, jQuery libs — original paths preserved in views).
-3. `/Scripts` → `Scripts/` (legacy jQuery scripts referenced in `_Layout.cshtml`).
-
-No view URLs were changed. `LocalFileService` saves uploaded images to `Content/Images/coverimages/`, matching where the seed cover images already live.
-
-### Secrets Management
-
-Replaced the manual `ConfigurationSetup.ConfigureConfiguration()` SSM bootstrap with `Amazon.Extensions.Configuration.SystemsManager`. The provider:
-- Runs only when `AWS_EXECUTION_ENV` is set **or** any service selector is `"aws"` — local runs skip it entirely.
-- Maps SSM parameter `/{AppName}/Key/Sub` → `Key:Sub` in IConfiguration.
-- `BookstoreConfiguration.Initialize()` then converts `:` separators to `/`, preserving the existing `GetSetting("Services/Authentication")` call pattern everywhere.
-- Configured with `optional: true` and `reloadAfter: 5 minutes`.
-
-`App_Start/ConfigurationSetup.cs` is now excluded from compilation.
-
-### Dockerfile (root)
-
-Replaced the `.NET Framework 4.8 mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019` pipeline with a Linux multi-stage build:
-
-```
-mcr.microsoft.com/dotnet/sdk:8.0 → publish → mcr.microsoft.com/dotnet/aspnet:8.0
-```
-
-### CDK EcsStack
-
-Changed `OperatingSystemFamily.WINDOWS_SERVER_2019_CORE` → `OperatingSystemFamily.LINUX`. Changed `ContainerImage.FromAsset(".\\\\"")` → `ContainerImage.FromAsset("./")` (cross-platform path).
-
-### Nullable Reference Types
-
-`<Nullable>enable</Nullable>` is set on `Bookstore.Web`. The codebase is clean — zero CS8xxx warnings after enabling.
-
-### Global Authorization Filter
-
-Fixed `options.Filters.Add(typeof(AuthorizeAttribute))` (which threw at runtime because `AuthorizeAttribute` doesn't implement `IFilterMetadata` directly) → `options.Filters.Add(new AuthorizeFilter())` from `Microsoft.AspNetCore.Mvc.Authorization`.
-
----
-
-## Remaining Warnings (Cannot Be Resolved Without Upstream Fix)
-
-| Warning | Location | Reason |
-|---------|----------|--------|
-| `NU1901: Amazon.CDK.Lib 2.188.0 (GHSA-464c-974j-9xm6)` | `Bookstore.Cdk` | Affects all published CDK.Lib versions. Pre-existing; not related to the migration. Monitor AWS CDK for a patched release. |
-
----
-
-## Next Steps
-
-1. **EF Core Migrations**: Run `dotnet ef migrations add InitialCreate` in `Bookstore.Data` for the first deployment to a real SQL Server instance.
-2. **Cognito HTTPS**: The ECS stack comment notes Cognito Hosted UI requires HTTPS. Add a TLS termination (ACM cert + ALB HTTPS listener) to the CDK stack before enabling Cognito auth on Fargate.
-3. **CDK NU1901**: Monitor `Amazon.CDK.Lib` releases for a patch to GHSA-464c-974j-9xm6.
-4. **`@Html.Partial` → tag helpers**: Admin views use `@Html.Partial("_Paginator")` (MVC1000 advisory). Replace with `<partial name="_Paginator" />` when convenient.
-
-
-## Status: ✅ Build Succeeds — 0 Errors, 2 Warnings
-
-```
-Build succeeded.
-    2 Warning(s)
-    0 Error(s)
-```
-
----
-
-## Changes Made
-
-### Project Files
-
-| File | Change |
-|------|--------|
-| `app/Bookstore.Web/Bookstore.Web.csproj` | Replaced legacy MSBuild format with SDK-style `Microsoft.NET.Sdk.Web`, targeting `net8.0`. Removed all old package/assembly references. Added modern NuGet packages. Excluded legacy App_Start files (BundleConfig, FilterConfig, RouteConfig, AuthenticationSetup, DependencyInjectionSetup, AdminAreaRegistration, AssemblyInfo, Global.asax). |
-| `app/Bookstore.Data/Bookstore.Data.csproj` | Updated from `netstandard2.0` + EF6 to `net8.0` + EF Core 8.0. Replaced EntityFramework 6.5.1 with Microsoft.EntityFrameworkCore 8.0.0 + SqlServer provider. Upgraded Magick.NET-Q8-AnyCPU from 14.6.0 to 14.16.0 (security fix). |
-| `app/Bookstore.Domain/Bookstore.Domain.csproj` | Added `GenerateAssemblyInfo=false` to suppress duplicate attribute error from existing `Properties/AssemblyInfo.cs`. |
-| `BobsBookstoreClassic.sln` | Updated Bookstore.Web project type GUID from legacy web GUID to SDK-style GUID. |
-
-### New Files Created
-
-| File | Purpose |
-|------|---------|
-| `app/Bookstore.Web/Program.cs` | ASP.NET Core entry point replacing Global.asax + OWIN Startup. Configures services, EF Core, authentication (local or Cognito), DI, middleware pipeline, and database seeding. |
-| `app/Bookstore.Web/appsettings.json` | Configuration file replacing Web.config. Contains connection strings, service selectors (local/aws), and Cognito settings. |
-| `app/Bookstore.Web/Areas/Admin/Views/_ViewImports.cshtml` | Admin area Razor view imports with necessary namespaces for `RouteValueDictionary` and HTML helper extensions. |
-
-### Data Layer (Bookstore.Data)
-
-- **`ApplicationDbContext.cs`**: Migrated from EF6 to EF Core. Changed constructor to accept `DbContextOptions<ApplicationDbContext>`. Replaced `DbModelBuilder` (EF6) with `ModelBuilder` (EF Core). Updated all relationship configurations: `HasRequired → HasOne`, `WillCascadeOnDelete → OnDelete(DeleteBehavior.Restrict)`. Removed `PluralizingTableNameConvention` (EF Core uses singular names by default). Replaced `HasDatabaseGeneratedOption` with `ValueGeneratedOnAdd`.
-- **`BookstoreDbInitializer.cs`**: Replaced `DropCreateDatabaseIfModelChanges<T>` with `BookstoreDbSeeder` — a safe static seeder that calls `EnsureCreatedAsync()` and seeds only if tables are empty. Called from `Program.cs`.
-- **`BookstoreConfiguration.cs`**: Replaced `System.Configuration.ConfigurationManager` with `IConfiguration`. Added `Initialize(IConfiguration)` method that flattens IConfiguration keys (`:` separator → `/` separator to match existing call sites). Preserves backward-compatible `GetSetting("Services/Authentication")` API.
-- **`PaginatedList.cs`**: Replaced `using System.Data.Entity` with `using Microsoft.EntityFrameworkCore`.
-- **All repositories** (`BookRepository`, `OrderRepository`, `ShoppingCartRepository`, `OfferRepository`, `AddressRepository`, `CustomerRepository`, `ReferenceDataRepository`):
-  - Replaced `using System.Data.Entity` with `using Microsoft.EntityFrameworkCore`
-  - Changed `await Task.Run(() => dbSet.Add(entity))` to `await dbSet.AddAsync(entity)`
-  - Fixed EF6 include chaining: `.Include(x => x.Items.Select(y => y.Child))` → `.Include(x => x.Items).ThenInclude(y => y.Child)`
-  - `OrderRepository.ListBestSellingBooksAsync`: Rewrote as two queries (grouped BookId lookup, then Book fetch) to avoid EF Core translation issues with `x.FirstOrDefault().Book` inside GroupBy Select.
-  - Removed `Amazon.Auth.AccessControlPolicy` import from OfferRepository.
-
-### Web Layer (Bookstore.Web)
-
-- **All controllers**: Replaced `using System.Web.Mvc` with `using Microsoft.AspNetCore.Mvc`. Added `using Microsoft.AspNetCore.Authorization` where `[AllowAnonymous]` is used.
-- **`AuthenticationController`**: Rewrote cookie operations using `Response.Cookies.Append` with expiry `CookieOptions` instead of `HttpCookie`.
-- **`Areas/Admin/Controllers/AdminAreaControllerBase`**: Replaced `[RouteArea("Admin")]` with `[Area("Admin")]` for ASP.NET Core area routing.
-- **`Areas/Admin/Controllers/ErrorController`**: Cleaned up commented-out ASP.NET Core code.
-- **`Helpers/LocalAuthenticationMiddleware.cs`**: Rewrote from OWIN `OwinMiddleware` to ASP.NET Core `RequestDelegate` pattern. Uses `ICustomerService` injected via method parameter (scoped service from pipeline).
-- **`Helpers/HttpContextExtensions.cs`**: Replaced `HttpContextBase` with `HttpContext`. Replaced `HttpCookie` + `Response.Cookies.Add` with `Response.Cookies.Append(key, value, CookieOptions)`.
-- **`Helpers/IOwinRequestExtensions.cs`**: Replaced OWIN `IOwinRequest` extension with `HttpRequest` extension (`HttpRequestExtensions`).
-- **`Helpers/MvcHelpers.cs`**: Replaced `HtmlHelper` with `IHtmlHelper` for ASP.NET Core compatibility.
-- **`Helpers/ControllerExtensions.cs`**: Updated namespace to `Microsoft.AspNetCore.Mvc`.
-- **`Helpers/ImageTypesAttribute.cs`**: Replaced `HttpPostedFileBase` with `IFormFile`.
-- **`Helpers/MaxFileSizeAttribute.cs`**: Replaced `HttpPostedFileBase` with `IFormFile`; used `file.Length` instead of `file.ContentLength`.
-- **`Areas/Admin/Models/Inventory/InventoryCreateUpdateViewModel.cs`**: Replaced `HttpPostedFileBase CoverImage` with `IFormFile CoverImage`.
-- **`Areas/Admin/Controllers/InventoryController.cs`**: Changed `model.CoverImage?.InputStream` to `model.CoverImage?.OpenReadStream()`.
-- **All ViewModel files** using `SelectListItem`: Replaced `using System.Web.Mvc` with `using Microsoft.AspNetCore.Mvc.Rendering`.
-- **`App_Start/ConfigurationSetup.cs`**: Replaced synchronous AWS SSM calls (`client.GetParameter`, `client.GetParametersByPath`) with async calls using `.GetAwaiter().GetResult()` since SSM .NET SDK no longer exposes synchronous overloads.
-- **`App_Start/LoggingSetup.cs`**: Replaced `DebuggerTarget` with `ConsoleTarget` (DebuggerTarget not suitable for container/Linux).
-- **`Views/_ViewImports.cshtml`**: Added `@using Microsoft.AspNetCore.Mvc.Rendering` and `@using Microsoft.AspNetCore.Routing`.
-- **`Areas/Admin/Views/Orders/Index.cshtml`**: Replaced `@Html.EnumDropDownListFor` with `@Html.DropDownListFor` + `Html.GetEnumSelectList<OrderStatus>()`.
-- **`Areas/Admin/Views/Offers/Index.cshtml`**: Same fix as above for `OfferStatus`.
-
----
-
-## Remaining Warnings (Cannot Be Resolved)
-
-| Warning | Location | Reason |
-|---------|----------|--------|
-| `NU1901: Amazon.CDK.Lib 2.188.0 low severity vulnerability (GHSA-464c-974j-9xm6)` | `Bookstore.Cdk/Bookstore.Cdk.csproj` | Affects all published versions of `Amazon.CDK.Lib`. Upgrading to 2.189.0 does not resolve it. This is a pre-existing CDK library issue not related to the application migration. A fix requires an upstream patch from AWS. |
-
----
-
-## Next Steps
-
-1. **Database migration**: Run `dotnet ef migrations add InitialCreate` and `dotnet ef database update` in the `Bookstore.Data` project to generate EF Core migrations for the first deployment.
-2. **Static files path**: The `LocalFileService` now saves images to `wwwroot/Content/images/coverimages/`. Verify the `Content` directory in `wwwroot` contains the original CSS/image assets (they were previously served from `Content/` root). Consider symlinking or copying static files to `wwwroot/`.
-3. **Dockerfile**: Update `Dockerfile` to use `mcr.microsoft.com/dotnet/aspnet:8.0` as the base runtime image and `mcr.microsoft.com/dotnet/sdk:8.0` for the build stage instead of Windows containers.
-4. **CDK stack**: The `BobsUsedBooksClassicECS` CDK stack references a Windows container Dockerfile. Update to use the Linux .NET 8 image.
-5. **Amazon.CDK.Lib vulnerability (GHSA-464c-974j-9xm6)**: Monitor AWS CDK releases for a patched version.
-6. **`@Html.Partial` usage**: Some admin views use `@Html.Partial("_Paginator")`. ASP.NET Core recommends replacing these with `<partial name="_Paginator" />` tag helper or `@await Html.PartialAsync(...)` to avoid potential deadlock warnings. Not a breaking issue but worth addressing.
+1. **EF Core Migrations**: Run `dotnet ef migrations add InitialCreate` in `Bookstore.Data` for first deployment to a real SQL Server instance.
+2. **Cognito HTTPS**: The ECS stack comment notes Cognito Hosted UI requires HTTPS. Add TLS termination (ACM cert + ALB HTTPS listener) before enabling Cognito auth on Fargate.

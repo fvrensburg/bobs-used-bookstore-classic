@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 
 namespace Bookstore.Domain.Books
 {
@@ -13,11 +13,11 @@ namespace Bookstore.Domain.Books
         int PublisherId,
         int? Year,
         string ISBN,
-        string Summary,
+        string? Summary,
         decimal Price,
         int Quantity,
-        Stream CoverImage,
-        string CoverImageFileName)
+        Stream? CoverImage,
+        string? CoverImageFileName)
         {
             this.Name = Name;
             this.Author = Author;
@@ -42,11 +42,11 @@ namespace Bookstore.Domain.Books
         public int PublisherId { get; }
         public int? Year { get; }
         public string ISBN { get; }
-        public string Summary { get; }
+        public string? Summary { get; }
         public decimal Price { get; }
         public int Quantity { get; }
-        public Stream CoverImage { get; }
-        public string CoverImageFileName { get; }
+        public Stream? CoverImage { get; }
+        public string? CoverImageFileName { get; }
     }
 
     public class UpdateBookDto
@@ -61,11 +61,11 @@ namespace Bookstore.Domain.Books
         int PublisherId,
         int? Year,
         string ISBN,
-        string Summary,
+        string? Summary,
         decimal Price,
         int Quantity,
-        Stream CoverImage,
-        string CoverImageFileName)
+        Stream? CoverImage,
+        string? CoverImageFileName)
         {
             this.BookId = BookId;
             this.Name = Name;
@@ -92,10 +92,10 @@ namespace Bookstore.Domain.Books
         public int PublisherId { get; }
         public int? Year { get; }
         public string ISBN { get; }
-        public string Summary { get; }
+        public string? Summary { get; }
         public decimal Price { get; }
         public int Quantity { get; }
-        public Stream CoverImage { get; }
-        public string CoverImageFileName { get; }
+        public Stream? CoverImage { get; }
+        public string? CoverImageFileName { get; }
     }
 }

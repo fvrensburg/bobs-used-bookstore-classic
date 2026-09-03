@@ -8,14 +8,14 @@ namespace Bookstore.Domain.Offers
     {
         Task<IPaginatedList<Offer>> ListAsync(OfferFilters filters, int pageIndex, int pageSize);
 
-        Task<IEnumerable<Offer>> ListAsync(string sub);
+        Task<IEnumerable<Offer>> ListAsync(string? sub);
 
-        Task<Offer> GetAsync(int id);
+        Task<Offer?> GetAsync(int id);
 
         Task AddAsync(Offer offer);
 
         Task SaveChangesAsync();
 
-        Task<OfferStatistics> GetStatisticsAsync();
+        Task<OfferStatistics?> GetStatisticsAsync();
     }
 }

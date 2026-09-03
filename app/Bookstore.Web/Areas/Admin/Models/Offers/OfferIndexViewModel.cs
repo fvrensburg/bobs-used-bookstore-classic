@@ -19,12 +19,12 @@ namespace Bookstore.Web.Areas.Admin.Models.Offers
                     OfferId = offer.Id,
                     BookName = offer.BookName,
                     Author = offer.Author,
-                    Genre = offer.Genre.Text,
-                    CustomerName = offer.Customer.FullName,
+                    Genre = offer.Genre?.Text,
+                    CustomerName = offer.Customer?.FullName,
                     OfferStatus = offer.OfferStatus,
                     OfferDate = offer.CreatedOn,
                     OfferPrice = offer.BookPrice,
-                    Condition = offer.Condition.Text
+                    Condition = offer.Condition?.Text
                 });
             }
 

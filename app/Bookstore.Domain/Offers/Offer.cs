@@ -1,11 +1,13 @@
-﻿using Bookstore.Domain.Customers;
+using Bookstore.Domain.Customers;
 using Bookstore.Domain.ReferenceData;
 
 namespace Bookstore.Domain.Offers
 {
     public class Offer : Entity
     {
+#pragma warning disable CS8618 // EF Core requires a parameterless constructor; required string properties are populated by EF.
         protected Offer() { }
+#pragma warning restore CS8618
 
         public Offer(
             int customerId,
@@ -35,27 +37,27 @@ namespace Bookstore.Domain.Offers
 
         public string BookName { get; set; }
 
-        public string FrontUrl { get; set; }
+        public string? FrontUrl { get; set; }
 
-        public ReferenceDataItem Genre { get; set; }
+        public ReferenceDataItem? Genre { get; set; }
         public int GenreId { get; set; }
 
-        public ReferenceDataItem Condition { get; set; }
+        public ReferenceDataItem? Condition { get; set; }
         public int ConditionId { get; set; }
 
-        public ReferenceDataItem Publisher { get; set; }
+        public ReferenceDataItem? Publisher { get; set; }
         public int PublisherId { get; set; }
 
-        public ReferenceDataItem BookType { get; set; }
+        public ReferenceDataItem? BookType { get; set; }
         public int BookTypeId { get; set; }
 
-        public string Summary { get; set; }
+        public string? Summary { get; set; }
 
         public OfferStatus OfferStatus { get; set; } = OfferStatus.PendingApproval;
 
-        public string Comment { get; set; }
+        public string? Comment { get; set; }
 
-        public Customer Customer { get; set; }
+        public Customer? Customer { get; set; }
         public int CustomerId { get; set; }
 
         public decimal BookPrice { get; set; }

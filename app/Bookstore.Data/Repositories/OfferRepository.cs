@@ -18,7 +18,7 @@ namespace Bookstore.Data.Repositories
             this.dbContext = dbContext;
         }
 
-        public async Task<OfferStatistics> GetStatisticsAsync()
+        public async Task<OfferStatistics?> GetStatisticsAsync()
         {
             var startOfMonth = DateTime.UtcNow.StartOfMonth();
 
@@ -37,7 +37,7 @@ namespace Bookstore.Data.Repositories
             await dbContext.Offer.AddAsync(offer);
         }
 
-        Task<Offer> IOfferRepository.GetAsync(int id)
+        Task<Offer?> IOfferRepository.GetAsync(int id)
         {
             return dbContext.Offer.Include(x => x.Customer).SingleOrDefaultAsync(x => x.Id == id);
         }
@@ -48,12 +48,12 @@ namespace Bookstore.Data.Repositories
 
             if (!string.IsNullOrWhiteSpace(filters.Author))
             {
-                query = query.Where(x => x.Author.Contains(filters.Author));
+                query = query.Where(x => x.Author.Contains(filters.Author!));
             }
 
             if (!string.IsNullOrWhiteSpace(filters.BookName))
             {
-                query = query.Where(x => x.BookName.Contains(filters.BookName));
+                query = query.Where(x => x.BookName.Contains(filters.BookName!));
             }
 
             if (filters.ConditionId.HasValue)
@@ -83,14 +83,14 @@ namespace Bookstore.Data.Repositories
             return result;
         }
 
-        async Task<IEnumerable<Offer>> IOfferRepository.ListAsync(string sub)
+        async Task<IEnumerable<Offer>> IOfferRepository.ListAsync(string? sub)
         {
             return await dbContext.Offer
                 .Include(x => x.BookType)
                 .Include(x => x.Genre)
                 .Include(x => x.Condition)
                 .Include(x => x.Publisher)
-                .Where(x => x.Customer.Sub == sub)
+                .Where(x => x.Customer!.Sub == sub)
                 .ToListAsync();
         }
 

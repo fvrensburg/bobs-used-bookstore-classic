@@ -41,14 +41,14 @@ namespace Bookstore.Web.Areas.Admin.Models.Orders
         public OrderDetailsViewModel(Order order)
         {
             OrderId = order.Id;
-            CustomerName = order.Customer.FullName;
+            CustomerName = order.Customer?.FullName;
             SelectedOrderStatus = order.OrderStatus;
-            AddressLine1 = order.Address.AddressLine1;
-            AddressLine2 = order.Address.AddressLine2;
-            City = order.Address.City;
-            State = order.Address.State;
-            ZipCode = order.Address.ZipCode;
-            Country = order.Address.Country;
+            AddressLine1 = order.Address?.AddressLine1;
+            AddressLine2 = order.Address?.AddressLine2;
+            City = order.Address?.City;
+            State = order.Address?.State;
+            ZipCode = order.Address?.ZipCode;
+            Country = order.Address?.Country;
             Subtotal = order.SubTotal;
             Tax = order.Tax;
             OrderDate = order.CreatedOn;
@@ -58,13 +58,13 @@ namespace Bookstore.Web.Areas.Admin.Models.Orders
             {
                 Items.Add(new OrderDetailsItemViewModel
                 {
-                    Author = orderItem.Book.Author,
-                    BookType = orderItem.Book.BookType.Text,
-                    Condition = orderItem.Book.Condition.Text,
-                    Genre = orderItem.Book.Genre.Text,
-                    Name = orderItem.Book.Name,
-                    Price = orderItem.Book.Price,
-                    Publisher = orderItem.Book.Publisher.Text
+                    Author = orderItem.Book?.Author,
+                    BookType = orderItem.Book?.BookType?.Text,
+                    Condition = orderItem.Book?.Condition?.Text,
+                    Genre = orderItem.Book?.Genre?.Text,
+                    Name = orderItem.Book?.Name,
+                    Price = orderItem.Book?.Price ?? 0m,
+                    Publisher = orderItem.Book?.Publisher?.Text
                 });
             }
         }

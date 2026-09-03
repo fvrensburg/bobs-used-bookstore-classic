@@ -7,7 +7,9 @@ namespace Bookstore.Domain.Books
     {
         public const int LowBookThreshold = 5;
 
+#pragma warning disable CS8618 // EF Core requires a parameterless constructor; required string properties are populated by EF.
         protected Book() { }
+#pragma warning restore CS8618
 
         public Book(
             string name, 
@@ -20,8 +22,8 @@ namespace Bookstore.Domain.Books
             decimal price,
             int quantity, 
             int? year = null,
-            string summary = null,
-            string coverImageUrl = null)
+            string? summary = null,
+            string? coverImageUrl = null)
         {
             Name = name;
             Author = author;
@@ -45,21 +47,21 @@ namespace Bookstore.Domain.Books
 
         public string ISBN { get; set; }
 
-        public ReferenceDataItem Publisher { get; set; }
+        public ReferenceDataItem? Publisher { get; set; }
         public int PublisherId { get; set; }
 
-        public ReferenceDataItem BookType { get; set; }
+        public ReferenceDataItem? BookType { get; set; }
         public int BookTypeId { get; set; }
 
-        public ReferenceDataItem Genre { get; set; }
+        public ReferenceDataItem? Genre { get; set; }
         public int GenreId { get; set; }
 
-        public ReferenceDataItem Condition { get; set; }
+        public ReferenceDataItem? Condition { get; set; }
         public int ConditionId { get; set; }
 
-        public string CoverImageUrl { get; set; }
+        public string? CoverImageUrl { get; set; }
 
-        public string Summary { get; set; }
+        public string? Summary { get; set; }
 
         public decimal Price { get; set; }
 

@@ -18,7 +18,7 @@ namespace Bookstore.Web.ViewModel.Checkout
 
         public CheckoutIndexViewModel() { }
 
-        public CheckoutIndexViewModel(Domain.Carts.ShoppingCart shoppingCart, IEnumerable<Domain.Addresses.Address> addresses)
+        public CheckoutIndexViewModel(Domain.Carts.ShoppingCart? shoppingCart, IEnumerable<Domain.Addresses.Address> addresses)
         {
             Addresses = addresses.Select(x => new CheckoutAddressViewModel
             {
@@ -31,15 +31,18 @@ namespace Bookstore.Web.ViewModel.Checkout
                 ZipCode = x.ZipCode
             }).ToList();
 
-            ShoppingCartItems = shoppingCart.GetShoppingCartItems(ShoppingCartItemFilter.IncludeOutOfStockItems).Select(x => new CheckoutItemViewModel
+            if (shoppingCart != null)
             {
-                BookName = x.Book.Name,
-                ImageUrl = x.Book.CoverImageUrl,
-                Price = x.Book.Price,
-                OutOfStock = x.Book.Quantity <= 0
-            }).ToList();
+                ShoppingCartItems = shoppingCart.GetShoppingCartItems(ShoppingCartItemFilter.IncludeOutOfStockItems).Select(x => new CheckoutItemViewModel
+                {
+                    BookName = x.Book?.Name,
+                    ImageUrl = x.Book?.CoverImageUrl,
+                    Price = x.Book?.Price ?? 0m,
+                    OutOfStock = x.Book?.Quantity <= 0
+                }).ToList();
 
-            Total = shoppingCart.GetSubTotal(ShoppingCartItemFilter.ExcludeOutOfStockItems);
+                Total = shoppingCart.GetSubTotal(ShoppingCartItemFilter.ExcludeOutOfStockItems);
+            }
 
             SelectedAddressId = Addresses.Count > 0 ? Addresses.First().Id : 0;
         }

@@ -5,7 +5,9 @@ namespace Bookstore.Domain.Carts
 {
     public class ShoppingCart : Entity
     {
+#pragma warning disable CS8618 // EF Core requires a parameterless constructor; CorrelationId is populated by EF.
         protected ShoppingCart() { }
+#pragma warning restore CS8618
 
         public List<ShoppingCartItem> ShoppingCartItems { get; private set; } = new List<ShoppingCartItem>();
 
@@ -20,7 +22,7 @@ namespace Bookstore.Domain.Carts
         {
             return filter == ShoppingCartItemFilter.IncludeOutOfStockItems ?
                 ShoppingCartItems.Where(x => x.WantToBuy) :
-                ShoppingCartItems.Where(x => x.WantToBuy && x.Book.Quantity > 0);
+                ShoppingCartItems.Where(x => x.WantToBuy && x.Book != null && x.Book.Quantity > 0);
         }
 
         public IEnumerable<ShoppingCartItem> GetWishListItems()
@@ -56,7 +58,7 @@ namespace Bookstore.Domain.Carts
 
         public decimal GetSubTotal(ShoppingCartItemFilter filter)
         {
-            return GetShoppingCartItems(filter).Sum(x => x.Book.Price);
+            return GetShoppingCartItems(filter).Sum(x => x.Book?.Price ?? 0m);
         }
     }
 

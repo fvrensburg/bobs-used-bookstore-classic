@@ -4,7 +4,7 @@ namespace Bookstore.Domain.Carts
 {
     public interface IShoppingCartService
     {
-        Task<ShoppingCart> GetShoppingCartAsync(string correlationId);
+        Task<ShoppingCart?> GetShoppingCartAsync(string correlationId);
 
         Task AddToShoppingCartAsync(AddToShoppingCartDto addToShoppingCartDto);
 
@@ -26,7 +26,7 @@ namespace Bookstore.Domain.Carts
             this.shoppingCartRepository = shoppingCartRepository;
         }
 
-        public async Task<ShoppingCart> GetShoppingCartAsync(string shoppingCartCorrelationId)
+        public async Task<ShoppingCart?> GetShoppingCartAsync(string shoppingCartCorrelationId)
         {
             return await shoppingCartRepository.GetAsync(shoppingCartCorrelationId);
         }
@@ -68,6 +68,8 @@ namespace Bookstore.Domain.Carts
         {
             var shoppingCart = await shoppingCartRepository.GetAsync(dto.CorrelationId);
 
+            if (shoppingCart == null) return;
+
             shoppingCart.MoveWishListItemToShoppingCart(dto.ShoppingCartItemId);
 
             await shoppingCartRepository.SaveChangesAsync();
@@ -90,6 +92,8 @@ namespace Bookstore.Domain.Carts
         public async Task DeleteShoppingCartItemAsync(DeleteShoppingCartItemDto dto)
         {
             var shoppingCart = await shoppingCartRepository.GetAsync(dto.CorrelationId);
+
+            if (shoppingCart == null) return;
 
             shoppingCart.RemoveShoppingCartItemById(dto.ShoppingCartItemId);
 

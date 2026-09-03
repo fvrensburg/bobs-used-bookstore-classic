@@ -19,7 +19,7 @@ namespace Bookstore.Web.Areas.Admin.Models.Orders
                 Items.Add(new OrderIndexListItemViewModel
                 {
                     Id = order.Id,
-                    CustomerName = order.Customer.FullName,
+                    CustomerName = order.Customer?.FullName,
                     OrderStatus = order.OrderStatus,
                     OrderDate = order.CreatedOn,
                     DeliveryDate = order.DeliveryDate,
