@@ -12,7 +12,7 @@
 
             <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
                 <ul class="navbar-nav flex-grow-1">
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
                         <li class="nav-item">
                             @Html.ActionLink("My Orders", "Index", "Orders", new { area = "" }, new { @class = "nav-link text-dark" })
@@ -21,7 +21,7 @@
                     <li class="nav-item">
                         @Html.ActionLink("Search", "Index", "Search", new { area = "" }, new { @class = "nav-link text-dark" })
                     </li>
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
                         <li class="nav-item">
                             @Html.ActionLink("Resell my Books", "Index", "Resale", new { area = "" }, new { @class = "nav-link text-dark" })
@@ -36,7 +36,7 @@
                 </ul>
             </div>
 
-            @Html.Partial("_LoginPartial")
+            <partial name="_LoginPartial" />
         </div>
     </nav>
 </header>

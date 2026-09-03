@@ -4,6 +4,79 @@
 
 ```
 Build succeeded.
+    2 Warning(s)   (Amazon.CDK.Lib NU1901 — unresolvable upstream; affects all published versions)
+    0 Error(s)
+
+Passed!  - Failed: 0, Passed: 20, Skipped: 0, Total: 20
+```
+
+---
+
+## Changes Made
+
+### Project Files
+
+| File | Change |
+|------|--------|
+| `app/Bookstore.Web/Bookstore.Web.csproj` | SDK-style `Microsoft.NET.Sdk.Web`, `net8.0`, `Nullable=enable`. Excluded all legacy App_Start files, AssemblyInfo, Global.asax. |
+| `app/Bookstore.Data/Bookstore.Data.csproj` | `net8.0` + EF Core 8.0. Magick.NET upgraded to 14.16.0. |
+| `app/Bookstore.Domain/Bookstore.Domain.csproj` | Upgraded from `netstandard2.0` → `net8.0` (fixes `System.ComponentModel.DataAnnotations` resolution). Removed obsolete compat shims. |
+| `app/Bookstore.Common/Bookstore.Common.csproj` | Upgraded from `netstandard2.0` → `net8.0`. Removed obsolete `Microsoft.CSharp` and `System.Data.DataSetExtensions` compat packages. |
+| `app/Bookstore.Cdk/Bookstore.Cdk.csproj` | Upgraded `Amazon.CDK.Lib` from 2.188.0 → 2.200.0 (latest; NU1901 persists upstream). |
+| `app/Bookstore.Web.Tests/Bookstore.Web.Tests.csproj` | xUnit 2.6, WebApplicationFactory, EF InMemory, Moq. |
+| `BobsBookstoreClassic.sln` | Updated Bookstore.Web GUID; added Bookstore.Web.Tests project. |
+| `Dockerfile` (root) | Linux multi-stage .NET 8 build. |
+
+### Nullable Reference Type Fixes (CS8xxx warnings — all resolved)
+
+| Category | Fix applied |
+|----------|------------|
+| `CS8618` — View model string properties uninitialized | All display-only string properties marked `string?` (data can be null from DB joins); required form input properties given `= string.Empty` defaults |
+| `CS8618` — IEnumerable properties uninitialized | Added `= Enumerable.Empty<SelectListItem>()` defaults |
+| `CS8625` — null literal to non-nullable | `Login(string? redirectUri = null)`, `GetSelectListForEnum(string? emptyItem = null)` |
+| `CS8765` — nullability mismatch in override | `IsValid(object? value)` in `ImageTypesAttribute` and `MaxFileSizeAttribute` |
+| `CS8603` — possible null return | `ClaimsPrincipalExtensions.GetSub` return types changed to `string?` |
+| `CS8600/CS8604` — null to non-nullable var/arg | `string?` for `shoppingCartClientId` in `HttpContextExtensions`; null-coalescing `??` guards in `HttpContextExtensions` and `AddressController` |
+| `CS8602` — dereference of possibly null | `User.Identity?.IsAuthenticated == true` in `_LoginPartial.cshtml`, `_NavBarPartial.cshtml`, `ShoppingCart/Index.cshtml`; `User.Identity?.Name` in Admin `_LoginPartial.cshtml`; null check on `context.TokenEndpointRequest` in `Program.cs` |
+| `CS8601` — null reference assignment | `ErrorViewModel.RequestId` changed to `string?` (both Web and Admin area) |
+
+### MVC1000 Warnings — All Resolved
+
+All `@Html.Partial(...)` and `@{ Html.RenderPartial(...); }` calls replaced with either:
+- `<partial name="..." />` tag helper (no-model case)
+- `@await Html.PartialAsync(...)` (cases passing a model object)
+
+Files updated: `_Layout.cshtml`, `_NavBarPartial.cshtml`, Admin `_Layout.cshtml`, Admin `_NavBarPartial.cshtml`, `Wishlist/Index.cshtml`, `Search/Index.cshtml`, `ShoppingCart/Index.cshtml`, `Address/CreateUpdate.cshtml`, `Admin/ReferenceData/Index.cshtml`, `Admin/Inventory/Index.cshtml`, `Admin/Inventory/CreateUpdate.cshtml`, `Admin/Orders/Index.cshtml`, `Admin/Orders/Details.cshtml`, `Admin/Offers/Index.cshtml`.
+
+### CDK — CS0618/CS0612 Warnings Resolved
+
+`CoreStack.cs`: Replaced deprecated `CloudFrontWebDistribution` (legacy L2 construct) with the modern `Distribution` + `S3BucketOrigin.WithOriginAccessIdentity()` API. Removed unused `Amazon.CDK.AWS.IAM` import.
+
+### Address Form — Razor Source Generator Fix
+
+`Views/Address/CreateUpdate.cshtml`: The `@using (Html.BeginForm()) { ... }` pattern combined with tag helpers (`asp-for`, `asp-validation-summary`) caused the .NET 8 Razor source generator to emit malformed C# (`CS1001: Identifier expected`). Rewrote the form using the modern `<form method="post">` tag helper approach with `asp-for`, `asp-validation-for`, and `<select asp-for asp-items>` throughout — identical functionality, no behavioral change.
+
+---
+
+## Remaining Warnings (Cannot Be Resolved Without Upstream Fix)
+
+| Warning | Location | Reason |
+|---------|----------|--------|
+| `NU1901: Amazon.CDK.Lib 2.200.0 (GHSA-464c-974j-9xm6)` | `Bookstore.Cdk` | Affects all published CDK.Lib versions. Monitor AWS CDK for a patched release. |
+
+---
+
+## Next Steps
+
+1. **EF Core Migrations**: Run `dotnet ef migrations add InitialCreate` in `Bookstore.Data` for the first deployment to a real SQL Server instance.
+2. **Cognito HTTPS**: The ECS stack comment notes Cognito Hosted UI requires HTTPS. Add a TLS termination (ACM cert + ALB HTTPS listener) to the CDK stack before enabling Cognito auth on Fargate.
+3. **CDK NU1901**: Monitor `Amazon.CDK.Lib` releases for a patch to GHSA-464c-974j-9xm6.
+
+
+## Status: ✅ Build Succeeds — 0 Errors, 2 Warnings | ✅ 20/20 Tests Pass
+
+```
+Build succeeded.
     2 Warning(s)   (pre-existing Amazon.CDK.Lib NU1901 — unresolvable upstream)
     0 Error(s)
 

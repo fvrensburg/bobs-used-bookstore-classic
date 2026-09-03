@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using Amazon.CDK;
+using Amazon.CDK.AWS.CertificateManager;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.AWS.ECS;
 using Amazon.CDK.AWS.ECS.Patterns;
+using Amazon.CDK.AWS.ElasticLoadBalancingV2;
 using Amazon.CDK.AWS.S3;
 using Constructs;
 using Amazon.CDK.AWS.Cognito;
@@ -43,40 +45,59 @@ public class EcsStack : Stack
             Vpc = props.Vpc
         });
 
-        var service = new ApplicationLoadBalancedFargateService(this, "ECSService",
-            new ApplicationLoadBalancedFargateServiceProps
-            {
-                Cluster = cluster,
-                CircuitBreaker = new DeploymentCircuitBreaker { Rollback = true },
-                DesiredCount = 2,
-                Cpu = 1024,
-                MemoryLimitMiB = 2048,
-                HealthCheckGracePeriod = Duration.Seconds(30),
-                TaskImageOptions = new ApplicationLoadBalancedTaskImageOptions
-                {
-                    Image = ContainerImage.FromAsset("./"),
-                    Environment = new Dictionary<string, string>
-                    {
-                            { "Services/Authentication", "local" }, //Can't use Cognito hosted UI without an https redirect.
-                            { "Services/Database", "aws" },
-                            { "Services/FileService", "aws" },
-                            { "Services/ImageValidationService", "aws" },
-                            { "Services/LoggingService", "aws" }
-                    }
-                },
-                RuntimePlatform = new RuntimePlatform
-                {
-                    CpuArchitecture = CpuArchitecture.X86_64,
-                    OperatingSystemFamily = OperatingSystemFamily.LINUX
-                }
-            });
+        // Optional: provide an ACM certificate ARN via CDK context to enable HTTPS.
+        //   cdk deploy --context certificateArn=arn:aws:acm:REGION:ACCOUNT:certificate/ID
+        // When a certificate is supplied the ALB switches to HTTPS (port 443) with an
+        // automatic HTTP→HTTPS redirect, and Cognito authentication is enabled.
+        var certificateArn = Node.TryGetContext("certificateArn") as string;
+        var useHttps = !string.IsNullOrWhiteSpace(certificateArn);
 
-        service.TargetGroup.HealthCheck = new HealthCheck
+        var taskImageOptions = new ApplicationLoadBalancedTaskImageOptions
+        {
+            Image = ContainerImage.FromAsset("./"),
+            ContainerPort = 8080,
+            Environment = new Dictionary<string, string>
+            {
+                // Cognito Hosted UI requires HTTPS; enable it only when the ALB has a certificate.
+                { "Services/Authentication", useHttps ? "aws" : "local" },
+                { "Services/Database", "aws" },
+                { "Services/FileService", "aws" },
+                { "Services/ImageValidationService", "aws" },
+                { "Services/LoggingService", "aws" }
+            }
+        };
+
+        var serviceProps = new ApplicationLoadBalancedFargateServiceProps
+        {
+            Cluster = cluster,
+            CircuitBreaker = new DeploymentCircuitBreaker { Rollback = true },
+            DesiredCount = 2,
+            Cpu = 1024,
+            MemoryLimitMiB = 2048,
+            HealthCheckGracePeriod = Duration.Seconds(30),
+            TaskImageOptions = taskImageOptions,
+            RuntimePlatform = new RuntimePlatform
+            {
+                CpuArchitecture = CpuArchitecture.X86_64,
+                OperatingSystemFamily = OperatingSystemFamily.LINUX
+            },
+            // HTTPS configuration — only applied when a certificate ARN is provided.
+            Protocol = useHttps ? ApplicationProtocol.HTTPS : ApplicationProtocol.HTTP,
+            Certificate = useHttps
+                ? Certificate.FromCertificateArn(this, "AlbCertificate", certificateArn!)
+                : null,
+            RedirectHTTP = useHttps   // adds port-80 → port-443 redirect listener
+        };
+
+        var service = new ApplicationLoadBalancedFargateService(this, "ECSService", serviceProps);
+
+        service.TargetGroup.ConfigureHealthCheck(new HealthCheck
         {
             Path = "/Home/Privacy",
             HealthyThresholdCount = 2,
-            Timeout = Duration.Seconds(25)
-        };
+            Timeout = Duration.Seconds(25),
+            Port = "8080"
+        });
 
         return service;
     }
@@ -90,8 +111,8 @@ public class EcsStack : Stack
             PreventUserExistenceErrors = true,
             SupportedIdentityProviders = new[]
             {
-                    UserPoolClientIdentityProvider.COGNITO
-                },
+                UserPoolClientIdentityProvider.COGNITO
+            },
             AuthFlows = new AuthFlow
             {
                 UserPassword = true
@@ -104,30 +125,30 @@ public class EcsStack : Stack
                 },
                 Scopes = new[]
                 {
-                        OAuthScope.OPENID,
-                        OAuthScope.EMAIL,
-                        OAuthScope.COGNITO_ADMIN,
-                        OAuthScope.PROFILE
-                    },
+                    OAuthScope.OPENID,
+                    OAuthScope.EMAIL,
+                    OAuthScope.COGNITO_ADMIN,
+                    OAuthScope.PROFILE
+                },
                 CallbackUrls = new[]
                 {
-                        $"https://{service.LoadBalancer.LoadBalancerDnsName}/signin-oidc"
-                    },
+                    $"https://{service.LoadBalancer.LoadBalancerDnsName}/signin-oidc"
+                },
                 LogoutUrls = new[]
                 {
-                        $"https://{service.LoadBalancer.LoadBalancerDnsName}/"
-                    }
+                    $"https://{service.LoadBalancer.LoadBalancerDnsName}/"
+                }
             }
         });
 
         _ = new[]
         {
-                new StringParameter(this, "CognitoECSAppClientSSMParameter", new StringParameterProps
-                {
-                    ParameterName = $"/{Constants.AppName}/Authentication/Cognito/ECSClientId",
-                    StringValue = ecsUserPoolClient.UserPoolClientId
-                })
-            };
+            new StringParameter(this, "CognitoECSAppClientSSMParameter", new StringParameterProps
+            {
+                ParameterName = $"/{Constants.AppName}/Authentication/Cognito/ECSClientId",
+                StringValue = ecsUserPoolClient.UserPoolClientId
+            })
+        };
     }
 
     internal void CreateEcsPermissions(ApplicationLoadBalancedFargateService service, EcsStackProps props)
@@ -143,28 +164,28 @@ public class EcsStack : Stack
             Actions = new[] { "ssm:GetParametersByPath", "ssm:GetParameter" },
             Resources = new[]
             {
-                    Arn.Format(new ArnComponents
-                    {
-                        Service = "ssm",
-                        Resource = "parameter",
-                        ResourceName = $"{Constants.AppName}/*"
-                    }, this)
-                }
+                Arn.Format(new ArnComponents
+                {
+                    Service = "ssm",
+                    Resource = "parameter",
+                    ResourceName = $"{Constants.AppName}/*"
+                }, this)
+            }
         }));
 
         service.Service.TaskDefinition.TaskRole.AddToPrincipalPolicy(new PolicyStatement(new PolicyStatementProps
         {
             Actions = new[]
             {
-                    "logs:DescribeLogGroups",
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents"
-                },
+                "logs:DescribeLogGroups",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            },
             Resources = new[]
             {
-                    "arn:aws:logs:*:*:log-group:*:log-stream:*"
-                }
+                "arn:aws:logs:*:*:log-group:*:log-stream:*"
+            }
         }));
 
         service.Service.Connections.AllowTo(props.Database, Port.Tcp(1433));

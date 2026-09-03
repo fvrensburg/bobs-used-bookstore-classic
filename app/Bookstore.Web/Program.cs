@@ -159,8 +159,9 @@ try
                 },
                 OnAuthorizationCodeReceived = context =>
                 {
-                    context.TokenEndpointRequest.RedirectUri =
-                        $"{context.Request.Scheme}://{context.Request.Host}/signin-oidc";
+                    if (context.TokenEndpointRequest != null)
+                        context.TokenEndpointRequest.RedirectUri =
+                            $"{context.Request.Scheme}://{context.Request.Host}/signin-oidc";
                     return Task.CompletedTask;
                 },
                 OnTokenValidated = async context =>

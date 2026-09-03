@@ -6,7 +6,7 @@ namespace Bookstore.Web.Helpers
 {
     public static class MvcHelpers
     {
-        public static IEnumerable<SelectListItem> GetSelectListForEnum<T>(this IHtmlHelper html, string emptyItem = null)
+        public static IEnumerable<SelectListItem> GetSelectListForEnum<T>(this IHtmlHelper html, string? emptyItem = null)
             where T : Enum
         {
             if (!string.IsNullOrEmpty(emptyItem))

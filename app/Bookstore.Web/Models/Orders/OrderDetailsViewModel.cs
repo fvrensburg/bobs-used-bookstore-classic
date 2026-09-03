@@ -39,9 +39,9 @@ namespace Bookstore.Web.ViewModel.Orders
     {
         public int BookId { get; set; }
 
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
 
-        public string BookName { get; set; }
+        public string? BookName { get; set; }
 
         public decimal Price { get; set; }
     }
