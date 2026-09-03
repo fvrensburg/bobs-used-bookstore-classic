@@ -9,7 +9,7 @@ namespace Bookstore.Domain.ReferenceData
 
         Task<IEnumerable<ReferenceDataItem>> GetAllReferenceDataAsync();
 
-        Task<ReferenceDataItem> GetReferenceDataItemAsync(int id);
+        Task<ReferenceDataItem?> GetReferenceDataItemAsync(int id);
 
         Task CreateAsync(CreateReferenceDataItemDto createReferenceDataItemDto);
 
@@ -35,14 +35,14 @@ namespace Bookstore.Domain.ReferenceData
             return await referenceDataRepository.FullListAsync();
         }
 
-        public async Task<ReferenceDataItem> GetReferenceDataItemAsync(int id)
+        public async Task<ReferenceDataItem?> GetReferenceDataItemAsync(int id)
         {
             return await referenceDataRepository.GetAsync(id);
         }
 
         public async Task CreateAsync(CreateReferenceDataItemDto dto)
         {
-            var referenceDataItem = new ReferenceDataItem(dto.ReferenceDataType, dto.Text);
+            var referenceDataItem = new ReferenceDataItem(dto.ReferenceDataType, dto.Text ?? string.Empty);
 
             await referenceDataRepository.AddAsync(referenceDataItem);
 
@@ -53,8 +53,10 @@ namespace Bookstore.Domain.ReferenceData
         {
             var referenceDataItem = await referenceDataRepository.GetAsync(dto.Id);
 
+            if (referenceDataItem == null) return;
+
             referenceDataItem.DataType = dto.ReferenceDataType;
-            referenceDataItem.Text = dto.Text;
+            referenceDataItem.Text = dto.Text ?? string.Empty;
 
             await referenceDataRepository.SaveChangesAsync();
         }

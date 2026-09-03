@@ -3,10 +3,10 @@
     public class CreateOfferDto
     {
         public CreateOfferDto(
-        string CustomerSub,
-        string BookName,
-        string Author,
-        string ISBN,
+        string? CustomerSub,
+        string? BookName,
+        string? Author,
+        string? ISBN,
         int BookTypeId,
         int ConditionId,
         int GenreId,
@@ -24,10 +24,10 @@
             this.BookPrice = BookPrice;
         }
 
-        public string CustomerSub { get; }
-        public string BookName { get; }
-        public string Author { get; }
-        public string ISBN { get; }
+        public string? CustomerSub { get; }
+        public string? BookName { get; }
+        public string? Author { get; }
+        public string? ISBN { get; }
         public int BookTypeId { get; }
         public int ConditionId { get; }
         public int GenreId { get; }

@@ -16,11 +16,11 @@ namespace Bookstore.Web.ViewModel.Resale
                 {
                     BookName = offer.BookName,
                     Author = offer.Author,
-                    Genre = offer.Genre.Text,
-                    Publisher = offer.Publisher.Text,
-                    BookType = offer.BookType.Text,
+                    Genre = offer.Genre?.Text,
+                    Publisher = offer.Publisher?.Text,
+                    BookType = offer.BookType?.Text,
                     ISBN = offer.ISBN,
-                    Condition = offer.Condition.Text,
+                    Condition = offer.Condition?.Text,
                     Price = offer.BookPrice,
                     OfferStatus = offer.OfferStatus.GetDescription()
                 });

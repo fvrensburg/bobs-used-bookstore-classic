@@ -7,7 +7,7 @@ namespace Bookstore.Web.ViewModel.Wishlist
     {
         public List<WishlistIndexItemViewModel> WishlistItems { get; set; } = new List<WishlistIndexItemViewModel>();
 
-        public WishlistIndexViewModel(Domain.Carts.ShoppingCart shoppingCart)
+        public WishlistIndexViewModel(Domain.Carts.ShoppingCart? shoppingCart)
         {
             if (shoppingCart == null) return;
 
@@ -16,9 +16,9 @@ namespace Bookstore.Web.ViewModel.Wishlist
                 .Select(x => new WishlistIndexItemViewModel
                 {
                     ShoppingCartItemId = x.Id,
-                    BookName = x.Book.Name,
-                    ImageUrl = x.Book.CoverImageUrl,
-                    Price = x.Book.Price
+                    BookName = x.Book?.Name,
+                    ImageUrl = x.Book?.CoverImageUrl,
+                    Price = x.Book?.Price ?? 0m
                 }).ToList();
         }
     }

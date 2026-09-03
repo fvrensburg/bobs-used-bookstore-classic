@@ -23,29 +23,29 @@ namespace Bookstore.Data.Repositories
             await dbContext.Order.AddAsync(order);
         }
 
-        async Task<Order> IOrderRepository.GetAsync(int id)
+        async Task<Order?> IOrderRepository.GetAsync(int id)
         {
             return await dbContext.Order
                 .Include(x => x.Customer)
                 .Include(x => x.Address)
                 .Include(x => x.OrderItems)
                     .ThenInclude(y => y.Book)
-                        .ThenInclude(b => b.BookType)
+                        .ThenInclude(b => b!.BookType)
                 .Include(x => x.OrderItems)
                     .ThenInclude(y => y.Book)
-                        .ThenInclude(b => b.Condition)
+                        .ThenInclude(b => b!.Condition)
                 .Include(x => x.OrderItems)
                     .ThenInclude(y => y.Book)
-                        .ThenInclude(b => b.Genre)
+                        .ThenInclude(b => b!.Genre)
                 .Include(x => x.OrderItems)
                     .ThenInclude(y => y.Book)
-                        .ThenInclude(b => b.Publisher)
+                        .ThenInclude(b => b!.Publisher)
                 .SingleOrDefaultAsync(x => x.Id == id);
         }
 
-        async Task<Order> IOrderRepository.GetAsync(int id, string sub)
+        async Task<Order?> IOrderRepository.GetAsync(int id, string? sub)
         {
-            return await dbContext.Order.SingleOrDefaultAsync(x => x.Id == id && x.Customer.Sub == sub);
+            return await dbContext.Order.SingleOrDefaultAsync(x => x.Id == id && x.Customer!.Sub == sub);
         }
 
         async Task<IEnumerable<Book>> IOrderRepository.ListBestSellingBooksAsync(int count)
@@ -62,7 +62,7 @@ namespace Bookstore.Data.Repositories
                 .ToListAsync();
         }
 
-        async Task<OrderStatistics> IOrderRepository.GetStatisticsAsync()
+        async Task<OrderStatistics?> IOrderRepository.GetStatisticsAsync()
         {
             var startOfMonth = DateTime.UtcNow.StartOfMonth();
 
@@ -109,12 +109,12 @@ namespace Bookstore.Data.Repositories
             return result;
         }
 
-        async Task<IEnumerable<Order>> IOrderRepository.ListAsync(string sub)
+        async Task<IEnumerable<Order>> IOrderRepository.ListAsync(string? sub)
         {
             return await dbContext.Order
                 .Include(x => x.OrderItems)
                     .ThenInclude(y => y.Book)
-                .Where(x => x.Customer.Sub == sub)
+                .Where(x => x.Customer!.Sub == sub)
                 .ToListAsync();
         }
 

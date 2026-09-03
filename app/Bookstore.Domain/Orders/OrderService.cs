@@ -11,9 +11,9 @@ namespace Bookstore.Domain.Orders
     {
         Task<IPaginatedList<Order>> GetOrdersAsync(OrderFilters filters, int pageIndex = 1, int pageSize = 10);
 
-        Task<IEnumerable<Order>> GetOrdersAsync(string sub);
+        Task<IEnumerable<Order>> GetOrdersAsync(string? sub);
 
-        Task<Order> GetOrderAsync(int id);
+        Task<Order?> GetOrderAsync(int id);
 
         Task<OrderStatistics> GetStatisticsAsync();
 
@@ -45,12 +45,12 @@ namespace Bookstore.Domain.Orders
             return await orderRepository.ListAsync(filters, pageIndex, pageSize);
         }
 
-        public async Task<IEnumerable<Order>> GetOrdersAsync(string sub)
+        public async Task<IEnumerable<Order>> GetOrdersAsync(string? sub)
         {
             return await orderRepository.ListAsync(sub);
         }
 
-        public async Task<Order> GetOrderAsync(int id)
+        public async Task<Order?> GetOrderAsync(int id)
         {
             return await orderRepository.GetAsync(id);
         }
@@ -64,7 +64,11 @@ namespace Bookstore.Domain.Orders
         {
             var shoppingCart = await shoppingCartRepository.GetAsync(dto.CorrelationId);
 
+            if (shoppingCart == null) return 0;
+
             var customer = await customerRepository.GetAsync(dto.CustomerSub);
+
+            if (customer == null) return 0;
 
             var order = new Order(customer.Id, dto.AddressId);
 
@@ -72,6 +76,8 @@ namespace Bookstore.Domain.Orders
 
             shoppingCart.GetShoppingCartItems(ShoppingCartItemFilter.ExcludeOutOfStockItems).ToList().ForEach(x =>
             {
+                if (x.Book == null) return;
+
                 order.AddOrderItem(x.Book, x.Quantity);
 
                 x.Book.ReduceStockLevel(x.Quantity);
@@ -89,6 +95,8 @@ namespace Bookstore.Domain.Orders
         public async Task UpdateOrderStatusAsync(UpdateOrderStatusDto dto)
         {
             var order = await orderRepository.GetAsync(dto.OrderId);
+
+            if (order == null) return;
 
             order.OrderStatus = dto.OrderStatus;
 

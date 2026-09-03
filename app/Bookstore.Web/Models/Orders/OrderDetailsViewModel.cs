@@ -28,9 +28,9 @@ namespace Bookstore.Web.ViewModel.Orders
             OrderItems = order.OrderItems.Select(x => new OrderDetailsItemViewModel
             {
                 BookId = x.BookId,
-                BookName = x.Book.Name,
-                ImageUrl = x.Book.CoverImageUrl,
-                Price = x.Book.Price
+                BookName = x.Book?.Name,
+                ImageUrl = x.Book?.CoverImageUrl,
+                Price = x.Book?.Price ?? 0m
             }).ToList();
         }
     }

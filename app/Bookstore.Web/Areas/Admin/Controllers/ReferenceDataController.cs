@@ -44,6 +44,8 @@ namespace Bookstore.Web.Areas.Admin.Controllers
         {
             var referenceDataItem = await referenceDataService.GetReferenceDataItemAsync(id);
 
+            if (referenceDataItem == null) return NotFound();
+
             return View("CreateUpdate", new ReferenceDataItemCreateUpdateViewModel(referenceDataItem));
         }
 

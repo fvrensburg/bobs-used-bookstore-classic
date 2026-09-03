@@ -48,6 +48,8 @@ namespace Bookstore.Web.Controllers
         {
             var address = await addressService.GetAddressAsync(User.GetSub(), id);
 
+            if (address == null) return NotFound();
+
             return View("CreateUpdate", new AddressCreateUpdateViewModel(address, returnUrl));
         }
 

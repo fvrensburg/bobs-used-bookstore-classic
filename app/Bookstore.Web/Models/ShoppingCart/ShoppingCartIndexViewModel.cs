@@ -10,7 +10,7 @@ namespace Bookstore.Web.ViewModel.ShoppingCart
 
         public List<ShoppingCartIndexItemViewModel> ShoppingCartItems { get; set; } = new List<ShoppingCartIndexItemViewModel>();
 
-        public ShoppingCartIndexViewModel(Domain.Carts.ShoppingCart shoppingCart)
+        public ShoppingCartIndexViewModel(Domain.Carts.ShoppingCart? shoppingCart)
         {
             if (shoppingCart == null) return;
 
@@ -18,12 +18,12 @@ namespace Bookstore.Web.ViewModel.ShoppingCart
                 .GetShoppingCartItems(ShoppingCartItemFilter.IncludeOutOfStockItems)
                 .Select(c => new ShoppingCartIndexItemViewModel
                     {
-                        BookId = c.Book.Id,
-                        ImageUrl = c.Book.CoverImageUrl,
-                        Price = c.Book.Price,
-                        BookName = c.Book.Name,
+                        BookId = c.Book?.Id ?? 0,
+                        ImageUrl = c.Book?.CoverImageUrl,
+                        Price = c.Book?.Price ?? 0m,
+                        BookName = c.Book?.Name,
                         ShoppingCartItemId = c.Id,
-                        StockLevel = c.Book.Quantity
+                        StockLevel = c.Book?.Quantity ?? 0
                     }).ToList();
         }
     }

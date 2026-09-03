@@ -24,19 +24,8 @@
     <ProjectReference Include="..\Bookstore.Domain\Bookstore.Domain.csproj" />
   </ItemGroup>
 
-  <!-- Exclude legacy files that are no longer needed -->
-  <ItemGroup>
-    <Compile Remove="Global.asax.cs" />
-    <Compile Remove="Startup.cs" />
-    <Compile Remove="App_Start\AuthenticationSetup.cs" />
-    <Compile Remove="App_Start\BundleConfig.cs" />
-    <Compile Remove="App_Start\ConfigurationSetup.cs" />
-    <Compile Remove="App_Start\DependencyInjectionSetup.cs" />
-    <Compile Remove="App_Start\FilterConfig.cs" />
-    <Compile Remove="App_Start\RouteConfig.cs" />
-    <Compile Remove="Areas\Admin\AdminAreaRegistration.cs" />
-    <Compile Remove="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
+  <!-- Exclude LoggingSetup.cs from the App_Start folder; it is compiled and called from Program.cs -->
+  <!-- All other App_Start files have been deleted as they are superseded by Program.cs -->
 
   <ItemGroup>
     <Content Remove="Web.config" />

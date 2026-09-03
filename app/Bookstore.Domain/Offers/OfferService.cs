@@ -10,9 +10,9 @@ namespace Bookstore.Domain.Offers
     {
         Task<IPaginatedList<Offer>> GetOffersAsync(OfferFilters filters, int pageIndex, int pageSize);
 
-        Task<IEnumerable<Offer>> GetOffersAsync(string sub);
+        Task<IEnumerable<Offer>> GetOffersAsync(string? sub);
 
-        Task<Offer> GetOfferAsync(int offerId);
+        Task<Offer?> GetOfferAsync(int offerId);
 
         Task CreateOfferAsync(CreateOfferDto createOfferDto);
 
@@ -37,12 +37,12 @@ namespace Bookstore.Domain.Offers
             return await offerRepository.ListAsync(filters, pageIndex, pageSize);
         }
 
-        public async Task<IEnumerable<Offer>> GetOffersAsync(string sub)
+        public async Task<IEnumerable<Offer>> GetOffersAsync(string? sub)
         {
             return await offerRepository.ListAsync(sub);
         }
 
-        public async Task<Offer> GetOfferAsync(int id)
+        public async Task<Offer?> GetOfferAsync(int id)
         {
             return await offerRepository.GetAsync(id);
         }
@@ -51,11 +51,13 @@ namespace Bookstore.Domain.Offers
         {
             var customer = await customerRepository.GetAsync(dto.CustomerSub);
 
+            if (customer == null) return;
+
             var offer = new Offer(
                 customer.Id,
-                dto.BookName,
-                dto.Author,
-                dto.ISBN,
+                dto.BookName ?? string.Empty,
+                dto.Author ?? string.Empty,
+                dto.ISBN ?? string.Empty,
                 dto.BookTypeId,
                 dto.ConditionId,
                 dto.GenreId,
@@ -70,6 +72,8 @@ namespace Bookstore.Domain.Offers
         public async Task UpdateOfferStatusAsync(UpdateOfferStatusDto dto)
         {
             var offer = await GetOfferAsync(dto.OfferId);
+
+            if (offer == null) return;
 
             offer.OfferStatus = dto.Status;
 

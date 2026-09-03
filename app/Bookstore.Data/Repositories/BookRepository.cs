@@ -33,12 +33,12 @@ namespace Bookstore.Data.Repositories
 
             if (!string.IsNullOrWhiteSpace(filters.Name))
             {
-                query = query.Where(x => x.Name.Contains(filters.Name));
+                query = query.Where(x => x.Name.Contains(filters.Name!));
             }
 
             if (!string.IsNullOrWhiteSpace(filters.Author))
             {
-                query = query.Where(x => x.Author.Contains(filters.Author));
+                query = query.Where(x => x.Author.Contains(filters.Author!));
             }
 
             if (filters.ConditionId.HasValue)
@@ -91,10 +91,10 @@ namespace Bookstore.Data.Repositories
             if (!string.IsNullOrWhiteSpace(searchString))
             {
                 query = query.Where(x => x.Name.Contains(searchString) ||
-                                         x.Genre.Text.Contains(searchString) ||
-                                         x.BookType.Text.Contains(searchString) ||
+                                         x.Genre!.Text.Contains(searchString) ||
+                                         x.BookType!.Text.Contains(searchString) ||
                                          x.ISBN.Contains(searchString) ||
-                                         x.Publisher.Text.Contains(searchString));
+                                         x.Publisher!.Text.Contains(searchString));
             }
 
             switch (sortBy)
@@ -132,6 +132,8 @@ namespace Bookstore.Data.Repositories
         {
             var existing = await dbContext.Book.FindAsync(book.Id);
 
+            if (existing == null) return;
+
             dbContext.Entry(existing).CurrentValues.SetValues(book);
 
             if (string.IsNullOrWhiteSpace(book.CoverImageUrl))
@@ -145,7 +147,7 @@ namespace Bookstore.Data.Repositories
             await dbContext.SaveChangesAsync();
         }
 
-        async Task<BookStatistics> IBookRepository.GetStatisticsAsync()
+        async Task<BookStatistics?> IBookRepository.GetStatisticsAsync()
         {
             return await dbContext.Book
                 .GroupBy(x => 1)

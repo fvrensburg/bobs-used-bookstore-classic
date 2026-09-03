@@ -16,6 +16,6 @@ namespace Bookstore.Domain.Books
 
         Task SaveChangesAsync();
 
-        Task<BookStatistics> GetStatisticsAsync();
+        Task<BookStatistics?> GetStatisticsAsync();
     }
 }

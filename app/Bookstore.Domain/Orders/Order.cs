@@ -9,7 +9,9 @@ namespace Bookstore.Domain.Orders
 {
     public class Order : Entity
     {
+#pragma warning disable CS8618 // EF Core requires a parameterless constructor; nav properties are populated by EF.
         protected Order() { }
+#pragma warning restore CS8618
 
         public Order(int customerId, int addressId)
         {
@@ -20,10 +22,10 @@ namespace Bookstore.Domain.Orders
         private readonly List<OrderItem> orderItems = new List<OrderItem>();
 
         public int CustomerId { get; set; }
-        public Customer Customer { get; set; }
+        public Customer? Customer { get; set; }
 
         public int AddressId { get; set; }
-        public Address Address { get; set; }
+        public Address? Address { get; set; }
 
         public ICollection<OrderItem> OrderItems => orderItems;
 
@@ -33,7 +35,7 @@ namespace Bookstore.Domain.Orders
 
         public decimal Tax => SubTotal * 0.1m;
 
-        public decimal SubTotal => OrderItems.Sum(x => x.Book.Price);
+        public decimal SubTotal => OrderItems.Sum(x => x.Book?.Price ?? 0m);
 
         public decimal Total => SubTotal + Tax;
 
