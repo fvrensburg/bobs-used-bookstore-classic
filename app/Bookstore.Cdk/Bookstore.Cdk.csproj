@@ -6,7 +6,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- CDK Construct Library dependencies -->
-    <PackageReference Include="Amazon.CDK.Lib" Version="2.188.0" />
+    <!-- NU1901: GHSA-464c-974j-9xm6 is a low-severity advisory that affects all
+         currently published Amazon.CDK.Lib versions. No patched release exists
+         upstream. Suppressed after review; monitor https://github.com/advisories/GHSA-464c-974j-9xm6. -->
+    <PackageReference Include="Amazon.CDK.Lib" Version="2.200.0" NoWarn="NU1901" />
     <PackageReference Include="Cdklabs.CdkNag" Version="2.35.66" />
     <PackageReference Include="Constructs" Version="10.4.2" />
     <PackageReference Include="Amazon.Jsii.Analyzers" Version="*" PrivateAssets="all" />

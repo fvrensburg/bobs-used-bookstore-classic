@@ -8,7 +8,7 @@ namespace Bookstore.Web.Controllers
 {
     public class AuthenticationController : Controller
     {
-        public ActionResult Login(string redirectUri = null)
+        public ActionResult Login(string? redirectUri = null)
         {
             if (string.IsNullOrWhiteSpace(redirectUri)) return RedirectToAction("Index", "Home");
 

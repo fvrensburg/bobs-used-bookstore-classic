@@ -6,7 +6,7 @@
 
 <div class="panel-body">
     
-    @Html.Partial("_Notification")
+    <partial name="_Notification" />
 
     <p style="text-align: center">
         <h1>Cart</h1>
@@ -32,7 +32,7 @@
         <h4>Total price：@Model.TotalPrice.ToString("C")</h4>
         <br />
 
-        @if (!User.Identity.IsAuthenticated)
+        @if (User.Identity?.IsAuthenticated != true)
         {
             <p>Please log in to complete your order.</p>
             @Html.ActionLink("Log In", "Login", "Authentication", new { Area = "" }, new { @class = "btn" })
